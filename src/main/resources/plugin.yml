@@ -11,3 +11,4 @@ folia-supported: false
 libraries:
   - com.zaxxer:HikariCP:${hikariVersion}
   - org.xerial:sqlite-jdbc:${sqliteVersion}
+  - com.mysql:mysql-connector-j:${mysqlVersion}

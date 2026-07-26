@@ -79,6 +79,7 @@ public final class DataSourceFactory implements AutoCloseable {
     }
 
     private void configureMysql(HikariConfig hikariConfig, DatabaseConfig config) {
+        hikariConfig.setDriverClassName("com.mysql.cj.jdbc.Driver");
         hikariConfig.setJdbcUrl("jdbc:mysql://" + config.host() + ":" + config.port() + "/" + config.databaseName());
         hikariConfig.setUsername(config.username());
         config.resolvePassword().ifPresentOrElse(
