@@ -1,0 +1,13 @@
+name: TheValorSMP
+version: '${version}'
+main: net.thevalorsmp.core.ValorPlugin
+api-version: '1.21'
+description: The Valor SMP gameplay platform.
+website: https://thevalorsmp.net
+authors:
+  - The Valor SMP team
+folia-supported: false
+# Resolved from Maven Central by Paper's library loader on startup, keeping them out of the plugin JAR.
+libraries:
+  - com.zaxxer:HikariCP:${hikariVersion}
+  - org.xerial:sqlite-jdbc:${sqliteVersion}

@@ -1,0 +1,25 @@
+build/
+.gradle/
+out/
+bin/
+
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.classpath
+.project
+
+*.log
+*.db
+*.db-journal
+
+# Never commit a local test server into the repo (REPOSITORY.md section 5)
+paper-*.jar
+server.properties
+eula.txt
+world/
+world_nether/
+world_the_end/

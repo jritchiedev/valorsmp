@@ -1,0 +1,23 @@
+# Storage configuration. NOT hot-reloadable: changing anything here requires a server restart,
+# because a live connection pool cannot be swapped safely (CONFIGURATION.md section 7).
+database:
+  # sqlite (default, zero external setup) or mysql (DATABASE.md section 1).
+  backend: sqlite
+
+  sqlite:
+    # Database file, relative to plugins/TheValorSMP/.
+    file: data.db
+
+  mysql:
+    host: localhost
+    port: 3306
+    database: valorsmp
+    username: valorsmp
+    # The password is never stored in this file. Set it in the environment variable named below
+    # on the server process instead (CONFIGURATION.md section 8, SECURITY.md section 7).
+    password-env-var: VALORSMP_DB_PASSWORD
+
+  pool:
+    # Conservative by default; this is a Minecraft plugin, not a web service (DATABASE.md section 2).
+    # Ignored for sqlite, which is always pooled at a single connection.
+    maximum-pool-size: 10
