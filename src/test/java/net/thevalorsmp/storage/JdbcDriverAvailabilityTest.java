@@ -23,9 +23,9 @@ class JdbcDriverAvailabilityTest {
     }
 
     @Test
-    void driverManager_mysqlUrl_resolvesDriver() throws SQLException {
-        assertThat(DriverManager.getDriver("jdbc:mysql://localhost:3306/valorsmp"))
-                .isInstanceOf(com.mysql.cj.jdbc.Driver.class);
+    void driverManager_mariadbUrl_resolvesDriver() throws SQLException {
+        assertThat(DriverManager.getDriver("jdbc:mariadb://localhost:3306/valorsmp"))
+                .isInstanceOf(org.mariadb.jdbc.Driver.class);
     }
 
     @Test
@@ -34,7 +34,7 @@ class JdbcDriverAvailabilityTest {
 
         assertThat(pluginYml)
                 .contains("org.xerial:sqlite-jdbc:")
-                .contains("com.mysql:mysql-connector-j:")
+                .contains("org.mariadb.jdbc:mariadb-java-client:")
                 .doesNotContain("${");
     }
 
