@@ -8,6 +8,7 @@ database:
     # Database file, relative to plugins/TheValorSMP/.
     file: data.db
 
+  # Used for both MySQL and MariaDB servers; both are driven by MariaDB Connector/J (DECISIONS.md ADR-005).
   mysql:
     host: localhost
     port: 3306

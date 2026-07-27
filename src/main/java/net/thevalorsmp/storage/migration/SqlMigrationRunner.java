@@ -58,13 +58,14 @@ public final class SqlMigrationRunner {
         Objects.requireNonNull(migrationFileNames, "migrationFileNames");
         List<String> applied = new ArrayList<>();
         try (Connection connection = dataSource.getConnection()) {
+            SqlDialect dialect = SqlDialect.detect(connection);
             createHistoryTable(connection);
             Set<String> alreadyApplied = readAppliedMigrations(connection);
             for (String fileName : migrationFileNames) {
                 if (alreadyApplied.contains(fileName)) {
                     continue;
                 }
-                applyMigration(connection, fileName);
+                applyMigration(connection, dialect, fileName);
                 applied.add(fileName);
                 logger.info("Applied migration {}.", fileName);
             }
@@ -96,14 +97,14 @@ public final class SqlMigrationRunner {
         return applied;
     }
 
-    private void applyMigration(Connection connection, String fileName) throws SQLException {
+    private void applyMigration(Connection connection, SqlDialect dialect, String fileName) throws SQLException {
         String script = readMigrationScript(fileName);
         boolean autoCommit = connection.getAutoCommit();
         connection.setAutoCommit(false);
         try {
             try (Statement statement = connection.createStatement()) {
                 for (String sql : splitStatements(script)) {
-                    statement.execute(sql);
+                    execute(statement, dialect, sql);
                 }
             }
             try (PreparedStatement insert = connection.prepareStatement(
@@ -114,9 +115,29 @@ public final class SqlMigrationRunner {
             connection.commit();
         } catch (SQLException e) {
             connection.rollback();
+            if (!dialect.supportsTransactionalDdl()) {
+                logger.error(
+                        "{} applies DDL outside transactions, so migration {} may be partially applied; "
+                                + "inspect the schema before restarting.",
+                        dialect,
+                        fileName);
+            }
             throw new RepositoryException("Migration " + fileName + " failed and was rolled back", e);
         } finally {
             connection.setAutoCommit(autoCommit);
+        }
+    }
+
+    private void execute(Statement statement, SqlDialect dialect, String sql) throws SQLException {
+        try {
+            statement.execute(dialect.translate(sql));
+        } catch (SQLException e) {
+            if (!dialect.isDuplicateObjectError(e)) {
+                throw e;
+            }
+            // Left behind by an earlier migration that failed after this statement on a backend
+            // without transactional DDL, so the object exists but was never recorded as applied.
+            logger.warn("Skipping already-applied statement: {}", e.getMessage());
         }
     }
 
@@ -132,7 +153,7 @@ public final class SqlMigrationRunner {
         }
     }
 
-    private static List<String> splitStatements(String script) {
+    static List<String> splitStatements(String script) {
         List<String> statements = new ArrayList<>();
         // Comments are stripped before splitting so a semicolon inside a comment can't split a statement.
         for (String raw : stripComments(script).split(";")) {

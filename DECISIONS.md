@@ -113,4 +113,32 @@ Default to firing a custom Bukkit domain event for cross-feature relationships; 
 
 ---
 
+## ADR-005: MariaDB Connector/J as the MySQL Driver, with a Dialect Layer in the Migration Runner
+
+**Date:** 2026-07-26
+**Status:** Accepted
+
+### Context
+ADR-002 made MySQL an opt-in backend, but no MySQL JDBC driver was ever declared, so `backend: mysql` failed at `onEnable` with "No suitable driver". Two things were needed to honour ADR-002: a driver, and migration SQL that MySQL actually accepts — the shipped migrations use `CREATE INDEX IF NOT EXISTS`, which is valid on SQLite and MariaDB but a syntax error on MySQL.
+
+The obvious driver, Oracle's `com.mysql:mysql-connector-j`, is GPL-2.0 (with the Universal FOSS Exception). `SECURITY.md` §6 requires explicit review before adopting a copyleft dependency, since this plugin is not distributed as open source.
+
+### Decision
+Use `org.mariadb.jdbc:mariadb-java-client` (LGPL-2.1, permitted for dynamic linking without relicensing this plugin) for both MySQL and MariaDB servers, connecting via `jdbc:mariadb://`. It is declared in `plugin.yml`'s `libraries:` block like every other runtime dependency, so Paper resolves it at startup and it is never shaded into the plugin JAR.
+
+Backend-specific SQL is isolated in `SqlDialect`, as `DATABASE.md` §1 requires. Migrations stay authored in SQLite syntax; `SqlDialect.MYSQL` rewrites what MySQL rejects.
+
+### Consequences
+- Easier: MySQL/MariaDB operators get a working backend under a licence compatible with a closed-source plugin; new migrations need no per-backend duplication.
+- Harder: every future migration must be checked against the dialect layer — `SqlDialectTest` scans all shipped migrations to enforce this, but the dialect only rewrites constructs it knows about.
+- MySQL commits DDL implicitly, so the runner's transactional guarantee does not hold there: a migration that fails part-way leaves a partially applied schema. The runner logs an explicit error saying so, and tolerates duplicate-index errors on re-run, but recovery is manual.
+- SQL Server (including Azure SQL) remains unsupported; it would need its own dialect and an ADR of its own.
+
+### Alternatives Considered
+- `com.mysql:mysql-connector-j`: the canonical driver, rejected on licence grounds per `SECURITY.md` §6.
+- Rewriting the migrations in MySQL-compatible SQL instead of adding a dialect layer: would mean dropping `IF NOT EXISTS` guards that make SQLite re-runs safe, trading one backend's safety for another's.
+- Shipping one migration script per backend: duplicates every future schema change, with the two copies free to drift.
+
+---
+
 *(Future ADRs are appended below this line, numbered sequentially, never renumbered or deleted — a superseded decision gets a new ADR marking the old one "Superseded by ADR-<n>," preserving history.)*

@@ -20,6 +20,8 @@ repositories {
 val paperApiVersion = "1.21.4-R0.1-SNAPSHOT"
 val hikariVersion = "6.2.1"
 val sqliteVersion = "3.49.1.0"
+// MariaDB Connector/J speaks the MySQL protocol and is LGPL, unlike GPL mysql-connector-j (ADR-005).
+val mariadbVersion = "3.5.9"
 
 // Integration tests (MockBukkit + real SQLite) live in their own source set so `test` stays fast.
 val integrationTest: SourceSet by sourceSets.creating {
@@ -39,9 +41,11 @@ dependencies {
     // Provided at runtime by Paper's plugin.yml `libraries` loader, so they stay out of the plugin JAR.
     compileOnly("com.zaxxer:HikariCP:$hikariVersion")
     compileOnly("org.xerial:sqlite-jdbc:$sqliteVersion")
+    compileOnly("org.mariadb.jdbc:mariadb-java-client:$mariadbVersion")
 
     testImplementation("com.zaxxer:HikariCP:$hikariVersion")
     testImplementation("org.xerial:sqlite-jdbc:$sqliteVersion")
+    testImplementation("org.mariadb.jdbc:mariadb-java-client:$mariadbVersion")
 
     testImplementation("io.papermc.paper:paper-api:$paperApiVersion")
     testImplementation("org.jetbrains:annotations:26.0.2")
@@ -74,7 +78,8 @@ tasks.processResources {
         expand(
                 "version" to project.version,
                 "hikariVersion" to hikariVersion,
-                "sqliteVersion" to sqliteVersion)
+                "sqliteVersion" to sqliteVersion,
+                "mariadbVersion" to mariadbVersion)
     }
 }
 

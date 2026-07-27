@@ -11,3 +11,4 @@ folia-supported: false
 libraries:
   - com.zaxxer:HikariCP:${hikariVersion}
   - org.xerial:sqlite-jdbc:${sqliteVersion}
+  - org.mariadb.jdbc:mariadb-java-client:${mariadbVersion}

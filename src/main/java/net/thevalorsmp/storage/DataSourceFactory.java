@@ -79,7 +79,9 @@ public final class DataSourceFactory implements AutoCloseable {
     }
 
     private void configureMysql(HikariConfig hikariConfig, DatabaseConfig config) {
-        hikariConfig.setJdbcUrl("jdbc:mysql://" + config.host() + ":" + config.port() + "/" + config.databaseName());
+        // MariaDB Connector/J drives both MySQL and MariaDB servers over the same protocol (ADR-005).
+        hikariConfig.setDriverClassName("org.mariadb.jdbc.Driver");
+        hikariConfig.setJdbcUrl("jdbc:mariadb://" + config.host() + ":" + config.port() + "/" + config.databaseName());
         hikariConfig.setUsername(config.username());
         config.resolvePassword().ifPresentOrElse(
                 hikariConfig::setPassword,
