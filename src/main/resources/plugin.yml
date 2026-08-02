@@ -12,3 +12,19 @@ libraries:
   - com.zaxxer:HikariCP:${hikariVersion}
   - org.xerial:sqlite-jdbc:${sqliteVersion}
   - org.mariadb.jdbc:mariadb-java-client:${mariadbVersion}
+commands:
+  speed:
+    description: Switch your permanent Valor speed between Speed I and II (Valor IV+).
+    usage: /speed set <1|2>
+    permission: valorsmp.speed.use
+  valorsmp:
+    description: Valor SMP operator diagnostics.
+    usage: /valorsmp <health|version|reload>
+    permission: valorsmp.admin
+permissions:
+  valorsmp.speed.use:
+    description: Allows using /speed. Actual effect is gated further by the player's Valor tier.
+    default: true
+  valorsmp.admin:
+    description: Valor SMP operator commands.
+    default: op

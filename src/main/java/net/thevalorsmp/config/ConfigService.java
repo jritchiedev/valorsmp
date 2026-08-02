@@ -14,12 +14,17 @@ import org.slf4j.Logger;
 public final class ConfigService {
 
     /** Packaged default config resources materialised on first run (CONFIGURATION.md section 2). */
-    public static final List<String> CONFIG_FILES = List.of("config/database.yml");
+    public static final List<String> CONFIG_FILES =
+            List.of("config/database.yml", "config/combat.yml", "config/progression.yml");
 
     private final DatabaseConfig database;
+    private final CombatConfig combat;
+    private final ProgressionConfig progression;
 
-    private ConfigService(DatabaseConfig database) {
+    private ConfigService(DatabaseConfig database, CombatConfig combat, ProgressionConfig progression) {
         this.database = database;
+        this.combat = combat;
+        this.progression = progression;
     }
 
     /**
@@ -32,10 +37,13 @@ public final class ConfigService {
     public static @NotNull ConfigService load(@NotNull ConfigBootstrap bootstrap, @NotNull Logger logger) {
         Objects.requireNonNull(bootstrap, "bootstrap");
         Objects.requireNonNull(logger, "logger");
-        YamlConfiguration databaseYaml = bootstrap.load("config/database.yml");
-        ConfigurationSection databaseSection = databaseYaml.getConfigurationSection("database");
-        return new ConfigService(DatabaseConfig.load(
-                databaseSection == null ? databaseYaml.createSection("database") : databaseSection, logger));
+        DatabaseConfig database =
+                DatabaseConfig.load(section(bootstrap, "config/database.yml", "database"), logger);
+        CombatConfig combat =
+                CombatConfig.load(section(bootstrap, "config/combat.yml", "combat"), logger);
+        ProgressionConfig progression =
+                ProgressionConfig.load(section(bootstrap, "config/progression.yml", "progression"), logger);
+        return new ConfigService(database, combat, progression);
     }
 
     /**
@@ -45,5 +53,29 @@ public final class ConfigService {
      */
     public @NotNull DatabaseConfig database() {
         return database;
+    }
+
+    /**
+     * Returns the combat and custom-item configuration.
+     *
+     * @return the combat config
+     */
+    public @NotNull CombatConfig combat() {
+        return combat;
+    }
+
+    /**
+     * Returns the Valor progression configuration.
+     *
+     * @return the progression config
+     */
+    public @NotNull ProgressionConfig progression() {
+        return progression;
+    }
+
+    private static ConfigurationSection section(ConfigBootstrap bootstrap, String resourceName, String rootKey) {
+        YamlConfiguration yaml = bootstrap.load(resourceName);
+        ConfigurationSection section = yaml.getConfigurationSection(rootKey);
+        return section == null ? yaml.createSection(rootKey) : section;
     }
 }
