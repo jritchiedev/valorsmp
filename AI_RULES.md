@@ -8,7 +8,7 @@ Hard constraints for AI agents, distinct from `AGENTS.md` (process) and `CODING_
 
 1. **Never commit secrets.** No database passwords, API tokens, webhook URLs, or credentials in source, config defaults, or commit history. Use environment variables or a gitignored local override file (`config/local.yml`, already in `.gitignore`).
 2. **Never disable a failing test to "fix" a build.** Fix the underlying issue or escalate per `AGENTS.md` §13. If a test is genuinely wrong, that requires a human-reviewed PR explaining why.
-3. **Never use `double`/`float` for currency or Valor score math.** Use `long` minor units or `BigDecimal` with a fixed, documented scale.
+3. **Never use `double`/`float` for Valor score math.** Valor scores are whole, non-negative integers (`int`/`long`), floored at 0.
 4. **Never push directly to `main`, `develop`, or any release branch.** All changes go through PR review, including agent-authored ones.
 5. **Never remove or weaken a permission check** without an explicit ticket instructing it and a `SECURITY.md`-aligned justification in the PR description.
 6. **Never introduce a new runtime dependency** (Maven/Gradle artifact) without checking its license compatibility and noting it in `DECISIONS.md`. Prefer zero new dependencies over adding one for trivial convenience.

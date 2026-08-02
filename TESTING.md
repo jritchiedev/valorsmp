@@ -22,34 +22,36 @@ Testing strategy, tooling, and the minimum coverage bar for merging any change.
 - Minimum coverage per new/changed service method: happy path, at least one edge case (boundary values, empty collections, zero/negative numeric inputs where relevant), at least one failure/invalid-input case.
 
 ```java
-class LandClaimServiceTest {
+class ValorScoreServiceTest {
 
-    private InMemoryLandClaimRepository repository;
-    private LandClaimService service;
+    private InMemoryValorScoreRepository repository;
+    private ValorScoreService service;
 
     @BeforeEach
     void setUp() {
-        repository = new InMemoryLandClaimRepository();
-        service = new LandClaimService(repository, testConfig(), Clock.fixed(NOW, UTC));
+        repository = new InMemoryValorScoreRepository();
+        service = new ValorScoreService(repository, testConfig(), Clock.fixed(NOW, UTC));
     }
 
     @Test
-    void createClaim_noOverlap_succeeds() {
-        var result = service.createClaim(OWNER, ORIGIN, 20);
-        assertThat(result).isInstanceOf(ClaimCreationResult.Success.class);
+    void awardKill_incrementsKillerDecrementsVictim() {
+        var result = service.awardKill(KILLER, VICTIM);
+        assertThat(result.killerScore()).isEqualTo(1);
+        assertThat(result.victimScore()).isEqualTo(0); // was 0, floored
     }
 
     @Test
-    void createClaim_overlappingExistingClaim_returnsTooClose() {
-        service.createClaim(OWNER, ORIGIN, 20);
-        var result = service.createClaim(OTHER_OWNER, NEARBY_ORIGIN, 20);
-        assertThat(result).isInstanceOf(ClaimCreationResult.TooClose.class);
+    void awardKill_victimAtZero_staysAtZero() {
+        var result = service.awardKill(KILLER, VICTIM);
+        assertThat(result.victimScore()).isZero();
     }
 
     @Test
-    void createClaim_negativeRadius_rejected() {
-        var result = service.createClaim(OWNER, ORIGIN, -5);
-        assertThat(result).isInstanceOf(ClaimCreationResult.InvalidRadius.class);
+    void awardKill_crossingThreshold_reportsTierChange() {
+        for (int i = 0; i < 5; i++) {
+            service.awardKill(KILLER, freshVictim());
+        }
+        assertThat(service.getTier(KILLER)).isEqualTo(ValorTier.II);
     }
 }
 ```
@@ -61,17 +63,19 @@ class LandClaimServiceTest {
 - Use MockBukkit's simulated server/player objects; never require a real running Paper server for CI.
 
 ```java
-class ClaimFlagCommandIntegrationTest {
+class CombatListenerIntegrationTest {
 
     private ServerMock server;
-    private PlayerMock player;
-    private LandClaimService service; // real or stub, depending on test intent
+    private PlayerMock killer;
+    private PlayerMock victim;
+    private ValorScoreService service; // real or stub, depending on test intent
 
     @BeforeEach
     void setUp() {
         server = MockBukkit.mock();
-        player = server.addPlayer();
-        service = new LandClaimService(new InMemoryLandClaimRepository(), testConfig(), Clock.systemUTC());
+        killer = server.addPlayer();
+        victim = server.addPlayer();
+        service = new ValorScoreService(new InMemoryValorScoreRepository(), testConfig(), Clock.systemUTC());
         MockBukkit.load(TestValorPlugin.class, service);
     }
 
@@ -81,10 +85,10 @@ class ClaimFlagCommandIntegrationTest {
     }
 
     @Test
-    void claimFlagCommand_asOwner_setsFlagAndConfirms() {
-        // arrange: create a claim owned by `player`
-        // act: player.performCommand("claim flag pvp false")
-        // assert: service reflects the change, player received confirmation message
+    void playerDeathByPlayer_awardsKillerAndMessagesBoth() {
+        // arrange: simulate victim killed by killer
+        // act: fire the PlayerDeathEvent through MockBukkit
+        // assert: killer score +1, victim score floored at 0, both received the correct message
     }
 }
 ```
@@ -94,8 +98,8 @@ class ClaimFlagCommandIntegrationTest {
 Every `Sql<Noun>Repository` has an integration test running against a temp-file or in-memory SQLite instance with the actual migrations applied, verifying:
 
 - Round-trip save/find correctness.
-- Query semantics under realistic conditions (e.g., `findIntersecting` actually returns overlapping claims and excludes non-overlapping ones).
-- Atomicity of operations that must be atomic (`WalletRepository#adjustBalance` under concurrent-style test simulation).
+- Query semantics under realistic conditions (e.g., `topN` actually returns the highest scores for a season in the right order).
+- Atomicity of operations that must be atomic (`ValorScoreRepository#addScore` under concurrent-style test simulation).
 
 ## 5. Regression Tests
 

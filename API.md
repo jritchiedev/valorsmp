@@ -1,6 +1,6 @@
 # API.md — The Valor SMP
 
-Documentation for the **public API surface** exposed to other plugins (not the internal service interfaces used within this codebase — those are covered in `SERVICES.md`). If another plugin wants to read Valor scores, check wallet balances, or react to a rank change, this is what it uses.
+Documentation for the **public API surface** exposed to other plugins (not the internal service interfaces used within this codebase — those are covered in `SERVICES.md`). If another plugin wants to read Valor scores or react to a tier change, this is what it uses.
 
 ---
 
@@ -35,29 +35,12 @@ Consuming plugins should declare a **soft or hard dependency** on `TheValorSMP` 
 ### `ValorScoreQuery`
 ```java
 public interface ValorScoreQuery {
-    long getScore(UUID playerId, int season);
-    long getCurrentSeasonScore(UUID playerId);
-    Rank getRank(UUID playerId);
+    int getScore(UUID playerId, int season);
+    int getCurrentSeasonScore(UUID playerId);
+    ValorTier getTier(UUID playerId);
 }
 ```
-Read-only. There is deliberately no public `addScore`/`setScore` method — score mutation is exclusively internal, to preserve the integrity guarantees in `docs/valor-system.md`. If a legitimate external use case for granting Valor emerges (e.g., a minigame plugin awarding Valor for its own events), that requires a `DECISIONS.md` entry and a carefully scoped, audited mutation method — not an open one.
-
-### `EconomyQuery`
-```java
-public interface EconomyQuery {
-    long getBalanceMinorUnits(UUID playerId);
-    boolean hasAtLeast(UUID playerId, long amountMinorUnits);
-}
-```
-Read-only for the same reason as above. Balance mutation from external plugins, if ever needed, is a separate, explicitly-scoped `EconomyMutator` interface requiring its own `DECISIONS.md` entry, permission gating, and audit logging — not present in v1 of this API.
-
-### `ClaimQuery`
-```java
-public interface ClaimQuery {
-    Optional<ClaimInfo> getClaimAt(Location location);
-    boolean isClaimedBy(Location location, UUID playerId);
-}
-```
+Read-only. There is deliberately no public `addScore`/`setScore` method — score mutation is exclusively internal (driven only by PvP kills/deaths), to preserve the integrity guarantees in `docs/valor-system.md`. Valor can only be gained from kills; there is no external grant path, and adding one would require a `DECISIONS.md` entry.
 
 ### `RankQuery`
 ```java
@@ -78,7 +61,7 @@ External plugins subscribe to any domain event listed in `EVENTS.md` the normal 
 
 ## 5. What Is Explicitly NOT Public API
 
-- Anything in `net.thevalorsmp.core`, `.landclaims` (implementation packages), `.economy` (implementation), etc. — only `net.thevalorsmp.api` is the contract. Consuming plugins reaching into internal packages via reflection do so at their own risk with zero compatibility guarantee.
+- Anything in `net.thevalorsmp.core`, `.progression` (implementation packages), `.combat` (implementation), etc. — only `net.thevalorsmp.api` is the contract. Consuming plugins reaching into internal packages via reflection do so at their own risk with zero compatibility guarantee.
 - Direct database access. External plugins never connect to The Valor SMP's database directly; all access goes through the API or events.
 - Any Bukkit-internal or NMS handle.
 

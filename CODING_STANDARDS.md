@@ -8,13 +8,13 @@ Concrete style and structure rules. Where this document and a linter/formatter c
 
 | Element | Convention | Example |
 |---|---|---|
-| Package | lowercase, no underscores, feature-named | `net.thevalorsmp.landclaims` |
-| Class | UpperCamelCase, descriptive noun (+ role suffix) | `LandClaimService`, `SqlLandClaimRepository` |
-| Interface | UpperCamelCase, no `I` prefix | `LandClaimRepository` (not `ILandClaimRepository`) |
-| Method | lowerCamelCase, verb-first | `createClaim`, `findByOwner` |
-| Boolean method/field | reads as a yes/no question | `isOwner()`, `hasPermission()` |
-| Constant | `UPPER_SNAKE_CASE` | `DEFAULT_CLAIM_RADIUS` |
-| Test method | `methodUnderTest_condition_expectedResult` | `createClaim_overlappingExisting_returnsTooClose` |
+| Package | lowercase, no underscores, feature-named | `net.thevalorsmp.progression` |
+| Class | UpperCamelCase, descriptive noun (+ role suffix) | `ValorScoreService`, `SqlValorScoreRepository` |
+| Interface | UpperCamelCase, no `I` prefix | `ValorScoreRepository` (not `IValorScoreRepository`) |
+| Method | lowerCamelCase, verb-first | `awardKill`, `findScore` |
+| Boolean method/field | reads as a yes/no question | `isMaxTier()`, `hasPermission()` |
+| Constant | `UPPER_SNAKE_CASE` | `MAX_VALOR_TIER` |
+| Test method | `methodUnderTest_condition_expectedResult` | `awardKill_victimAtZero_staysAtZero` |
 | Generic type parameter | single uppercase letter or short descriptive (`T`, `ID`) | |
 
 Avoid abbreviations that aren't immediately obvious (`cfg` is fine for `config` in a local variable; `mgr` for `manager` is borderline — prefer the full word in anything public).
@@ -27,14 +27,14 @@ Every feature package follows the internal shape from `ARCHITECTURE.md` §9: `mo
 
 - One public top-level class per file, filename matches class name.
 - Prefer `final` classes unless deliberately designed for extension (and if so, document the extension contract in Javadoc).
-- Favor composition over inheritance. Inheritance is reserved for genuine is-a relationships with shared behavior (e.g., a base `AbstractQuest` type if multiple quest types share substantial logic) — not for code reuse convenience alone.
-- Records (`record LandClaimId(UUID value)`) are preferred over plain classes for simple immutable data carriers with no behavior beyond equality/accessors.
+- Favor composition over inheritance. Inheritance is reserved for genuine is-a relationships with shared behavior — not for code reuse convenience alone.
+- Records (`record PlayerId(UUID value)`) are preferred over plain classes for simple immutable data carriers with no behavior beyond equality/accessors.
 
 ## 4. Method Conventions
 
 - Soft ceiling: ~40 lines. If longer, look for an extractable sub-step.
-- Parameters: prefer 4 or fewer. Beyond that, introduce a parameter object (e.g., a `ClaimCreationRequest` record) rather than a long positional parameter list.
-- Avoid boolean parameters that change method behavior in non-obvious ways (`createClaim(owner, origin, radius, true)` — what does `true` mean at the call site?). Use an enum or split into two named methods instead.
+- Parameters: prefer 4 or fewer. Beyond that, introduce a parameter object (e.g., a `KillContext` record) rather than a long positional parameter list.
+- Avoid boolean parameters that change method behavior in non-obvious ways (`awardKill(killer, victim, true)` — what does `true` mean at the call site?). Use an enum or split into two named methods instead.
 - Early-return for validation/guard clauses rather than deeply nested `if` blocks.
 
 ## 5. Null Safety
@@ -75,7 +75,7 @@ Every feature package follows the internal shape from `ARCHITECTURE.md` §9: `mo
 
 ## 10. Dependency Injection
 
-- Constructor injection only, per `ARCHITECTURE.md` §3. No field injection, no static service locators (`ServiceLocator.get(LandClaimService.class)`-style patterns are forbidden — they hide dependencies and break testability).
+- Constructor injection only, per `ARCHITECTURE.md` §3. No field injection, no static service locators (`ServiceLocator.get(ValorScoreService.class)`-style patterns are forbidden — they hide dependencies and break testability).
 
 ## 11. Configuration Usage
 

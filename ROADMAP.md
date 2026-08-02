@@ -15,45 +15,42 @@ Prioritized, living plan for feature delivery. This is a planning artifact, upda
 
 **Exit criteria:** a player can join the server, get a profile row created, and the plugin enables/disables cleanly with zero errors, on a fresh database and on a database with prior test data.
 
-## Milestone 1 — Core Progression & Economy
+## Milestone 1 — Core Progression & Combat
 
-- [ ] `ValorScoreService` + rank computation (`docs/progression.md`, `docs/valor-system.md`)
-- [ ] `EconomyService` + wallet persistence (`docs/economy.md`)
-- [ ] `CombatService` (basic PvP tagging, kill/death tracking feeding Valor) (`docs/combat.md`)
-- [ ] Rank-based chat formatting (basic version)
+- [ ] `ValorScoreService` + tier computation (`docs/progression.md`, `docs/valor-system.md`)
+- [ ] `CombatService` (kill/death tracking feeding the +1/-1 Valor award) (`docs/combat.md`)
+- [ ] Tier perk application (extended potions, permanent speed/strength effects)
+- [ ] Tier-based chat formatting (basic version)
 
-**Exit criteria:** players can fight, earn Valor, see their rank change, and hold/spend currency, all persisted correctly across restarts, with duplication-safety tests passing (`SECURITY.md` §9).
+**Exit criteria:** players can fight, gain/lose Valor, see their tier change and perks apply, all persisted correctly across restarts, with duplication-safety tests passing (`SECURITY.md` §9).
 
-## Milestone 2 — Land & Social Systems
+## Milestone 2 — Custom Item Mechanics
 
-- [ ] `LandClaimService` (creation, boundaries, flags)
-- [ ] `TeamService` (creation, membership, shared claim access)
-- [ ] Permission-tier `RankService` (distinct from Valor rank) and `ranks.yml`
+- [ ] Mace: 30-second cooldown; not enchantable via enchantment table or anvil
+- [ ] Spears (netherite/diamond/gold/iron/copper/wood): 10-second cooldown for the `lunge` enchant
+- [ ] Dragon egg: grants permanent Strength III while in inventory; cannot be placed in an ender chest
+- [ ] `/speed set 1|2` command for Valor tier IV and V players
 
-**Exit criteria:** players can claim land individually or as a team, protections work correctly, and rank-based permissions gate the intended actions.
+**Exit criteria:** each item behaves per `docs/combat.md`, cooldowns and restrictions are enforced server-side, and edge cases (dropping/relogging with the dragon egg, cooldown persistence) are tested.
 
-## Milestone 3 — Engagement Systems
+## Milestone 3 — Social & Staff Systems
 
-- [ ] `QuestService` + initial quest set
-- [ ] `AchievementService`
-- [ ] `LeaderboardService`
-- [ ] `EventSchedulerService` (timed server events, initial event types)
+- [ ] Permission-tier `RankService` (staff ranks, distinct from Valor tier) and `ranks.yml`
+- [ ] `LeaderboardService` (Valor score, PvP kills)
 
-**Exit criteria:** players have ongoing reasons to log in beyond raw sandbox play; leaderboards reflect real Valor/economy/combat stats accurately.
+**Exit criteria:** staff rank-based permissions gate the intended actions, and leaderboards reflect real Valor/combat stats accurately.
 
-## Milestone 4 — Rewards & Retention
+## Milestone 4 — Mod Integration
 
-- [ ] `CrateService` + initial crate types
-- [ ] `CosmeticsService` (unlock + equip, reacting to Valor rank and economy events)
-- [ ] `NpcInteractionService` (quest-giving NPCs at minimum)
+- [ ] Simple Voice Chat (1.21.11) added alongside the plugin
+- [ ] String Duper Returns (1.21.11) added alongside the plugin
 
-**Exit criteria:** players have cosmetic progression goals layered on top of the core Valor/economy loop, with crate fairness auditable via `crate_open_log`.
+**Exit criteria:** both mods load cleanly with the server and plugin, verified in a live test instance.
 
 ## Milestone 5 — Season Structure
 
 - [ ] `SeasonService` (lifecycle, archival per `AGENTS.md` §12)
-- [ ] Season-scoped leaderboard resets
-- [ ] Season-end rewards tied into `CrateService`/`CosmeticsService`
+- [ ] Season-scoped Valor score and leaderboard resets
 
 **Exit criteria:** a full season can start, run, and end with correct archival, no data loss, and no manual database intervention required.
 
@@ -65,7 +62,7 @@ Prioritized, living plan for feature delivery. This is a planning artifact, upda
 
 ## Beyond v1.0 (Speculative — see `docs/future-features.md`)
 
-Ideas not yet committed to a milestone: cross-server/proxy support, additional crate/cosmetic content cadence, expanded NPC dialogue systems, community-requested quality-of-life features. These stay in `docs/future-features.md` until a milestone above is created for them via a `DECISIONS.md`-backed prioritization decision.
+Ideas not yet committed to a milestone: cross-server/proxy support, additional item mechanics, community-requested quality-of-life features. These stay in `docs/future-features.md` until a milestone above is created for them via a `DECISIONS.md`-backed prioritization decision.
 
 ## How This Document Is Maintained
 

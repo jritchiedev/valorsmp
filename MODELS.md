@@ -31,7 +31,7 @@ Principle: **match model capability class to task shape**, not to brand loyalty.
 
 Regardless of the default mapping above, **escalate to a frontier reasoning-tier model** whenever any of these are true for the current task:
 
-- The change touches the economy/currency math, permission checks, or database migrations against live data.
+- The change touches Valor score math, permission checks, or database migrations against live data.
 - Two mid-tier attempts have already failed to produce a passing, sensible solution.
 - The task requires synthesizing more than ~3 documents' worth of context to get right (e.g., reconciling `ARCHITECTURE.md`, a `docs/*.md` page, and `DATABASE.md` simultaneously).
 - The output will be merged with reduced human review (e.g., a low-risk-classified PR that's likely to get a fast rubber-stamp) — put more model capability in up front since less will be applied at review time.
@@ -40,7 +40,7 @@ Regardless of the default mapping above, **escalate to a frontier reasoning-tier
 
 Use a smaller/faster model when:
 
-- The task is mechanical repetition of an established pattern (e.g., "add a fifth quest type identical in shape to the existing four").
+- The task is mechanical repetition of an established pattern (e.g., "add a new tier perk identical in shape to the existing ones").
 - The task is pure formatting/lint fixing.
 - The task is generating boilerplate (getters, a new DTO matching an existing shape, a config key with a documented default).
 

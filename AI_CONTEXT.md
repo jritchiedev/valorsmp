@@ -6,7 +6,7 @@ Purpose: give any AI agent, cold, enough context to start working productively w
 
 ## 1. What This Server Is
 
-The Valor SMP is a survival multiplayer Minecraft server (Java Edition, PaperMC) with a persistent, competitive-but-fair progression meta layered on top of vanilla survival: a "Valor" rank/progression track, structured PvP combat rules, a player-driven economy, land claiming, teams, quests, achievements, timed events, leaderboards, cosmetics, crates, custom chat formatting, ranks/permissions tiers, NPC-driven interactions, and periodic season resets.
+The Valor SMP is a survival multiplayer Minecraft server (Java Edition, PaperMC, targeting 1.21.11) with a persistent, competitive-but-fair PvP progression meta layered on top of vanilla survival: a "Valor" tier progression track earned exclusively through PvP, structured PvP combat rules, custom item mechanics (mace and spear cooldowns, a dragon-egg strength buff), leaderboards, custom chat formatting, staff rank/permission tiers, and periodic season resets. Two mods are added alongside the plugin: Simple Voice Chat and String Duper Returns.
 
 It is intended to run continuously for a general playerbase (not a private friend group), which means:
 
@@ -16,7 +16,7 @@ It is intended to run continuously for a general playerbase (not a private frien
 
 ## 2. What "Valor" Means (the core hook)
 
-"Valor" is the server's central progression currency/score, distinct from the economy currency. Full detail: `docs/valor-system.md`. In short: players earn Valor through PvP victories, quest completion, and event participation; Valor determines rank tier, which gates cosmetic unlocks, crate tiers, and certain permissions. Valor is **not** directly purchasable and is **not** the same thing as in-game money — keep these concepts separate in code (`ValorScore` vs `Wallet`/`Balance`).
+"Valor" is the server's central progression score. Full detail: `docs/valor-system.md`. In short: a player gains **+1 Valor Point** for killing another player and loses **1** when killed by a player (floored at 0). Every 4 Valor Points unlocks a new tier; the maximum tier is 5, and each tier grants better perks (extended potion durations, permanent speed/strength effects). Valor can **only** be earned from kills — there is no quest, event, or purchase path — and it is non-transferable and non-withdrawable.
 
 ## 3. Current System Status
 
@@ -24,18 +24,10 @@ It is intended to run continuously for a general playerbase (not a private frien
 |---|---|---|
 | Valor progression | Planned / early design | `docs/progression.md`, `docs/valor-system.md` |
 | Combat | Planned | `docs/combat.md` |
-| Economy | Planned | `docs/economy.md` |
-| Land claims | Planned | `docs/future-features.md` (until promoted to its own doc) |
-| Teams | Planned | `docs/future-features.md` |
-| Quests | Planned | `docs/future-features.md` |
-| Achievements | Planned | `docs/future-features.md` |
-| Events (timed) | Planned | `docs/future-features.md` |
+| Custom item mechanics (mace/spear cooldowns, dragon egg) | Planned | `docs/combat.md` (until promoted to its own doc) |
 | Leaderboards | Planned | `docs/future-features.md` |
-| Cosmetics | Planned | `docs/future-features.md` |
-| Crates | Planned | `docs/future-features.md` |
 | Chat | Planned | `docs/future-features.md` |
-| Ranks/Permissions | Planned | `docs/future-features.md` |
-| NPCs | Planned | `docs/future-features.md` |
+| Ranks/Permissions (staff) | Planned | `docs/future-features.md` |
 | Season resets | Planned | `docs/future-features.md` |
 
 When a system moves from "Planned" to "In Progress," it should get its own `docs/<system>.md` file (promoted out of `future-features.md`), and this table should be updated in the same PR.
@@ -45,7 +37,7 @@ When a system moves from "Planned" to "In Progress," it should get its own `docs
 - **Java 21**, PaperMC (not Spigot, not Bukkit-only — Paper-specific APIs are allowed and preferred when they simplify code, e.g., Paper's async chunk API, Adventure `Component` for text instead of legacy `ChatColor` strings).
 - **Gradle Kotlin DSL** for the build.
 - All player-facing text uses **Adventure `Component`**, not legacy `&`-color-coded strings, except inside YAML config values where a MiniMessage-style string is deserialized into a `Component` at load time.
-- Money and Valor scores are **never** represented as floating point in persistence or in any calculation that affects balances — use `long` minor-units (e.g., cents) or `BigDecimal` consistently per `docs/economy.md`, never `double`.
+- Valor scores are **never** represented as floating point — they are small non-negative integers. Persist and compute them with integer types, never `double`/`float`.
 - Season resets must be able to archive rather than destroy prior-season data (see `docs/future-features.md` and `DATABASE.md`).
 
 ## 5. Things That Look Like Good Ideas But Aren't (Learned Constraints)
@@ -68,11 +60,7 @@ When a system moves from "Planned" to "In Progress," it should get its own `docs
 
 | Term | Meaning |
 |---|---|
-| Valor / Valor Score | The server's core progression score, distinct from economy currency |
-| Wallet / Balance | Economy currency held by a player |
-| Rank | A tier derived from Valor Score, gates cosmetics/permissions |
-| Claim | A protected land region owned by a player or team |
-| Team | A persistent group of players sharing claims/permissions |
-| Season | A bounded time period after which certain stats/leaderboards reset and archive |
-| Crate | A lootbox-style reward container, opened with a key |
-| Tag (combat) | Temporary PvP-flagged state preventing logout-to-escape |
+| Valor / Valor Score | The server's core progression score; small non-negative integer, earned only from PvP kills |
+| Valor Tier | A tier (I–V) derived from Valor Score; every 4 points unlocks the next, each granting better perks |
+| Staff Rank | A permission tier for staff, distinct from Valor Tier |
+| Season | A bounded time period after which Valor scores/leaderboards reset and archive |

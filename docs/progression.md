@@ -1,50 +1,44 @@
 # Progression
 
-The mechanical implementation of the Valor rank ladder: thresholds, display, and what rank gates. For the conceptual "what is Valor and why" discussion, see `docs/valor-system.md` — this document is the practical "how the ladder works" reference.
+The mechanical implementation of the Valor tier ladder: thresholds, display, and the perks each tier grants. For the conceptual "what is Valor and why" discussion, see `docs/valor-system.md` — this document is the practical "how the ladder works" reference.
 
 ---
 
-## 1. Rank Ladder (Example Shape)
+## 1. Tier Ladder
 
-Actual thresholds live in `progression.yml` (`CONFIGURATION.md`) and are expected to be tuned post-launch; the shape below illustrates the intended structure, not final numbers.
+Every 4 Valor Points unlocks a new tier. The maximum tier is 5. Perks are cumulative in effect as described per tier.
 
-| Rank | Valor Threshold | Display Color | Gates |
-|---|---|---|---|
-| Unranked | 0 | Gray | — |
-| Bronze | 100 | Bronze/orange | Bronze-tier cosmetics |
-| Silver | 500 | Silver/white | Silver-tier cosmetics, Silver crate eligibility |
-| Gold | 1,500 | Gold/yellow | Gold-tier cosmetics, Gold crate eligibility |
-| Platinum | 4,000 | Cyan | Platinum-tier cosmetics, leaderboard highlight |
-| Valor Champion | 10,000 | Custom gradient | Top-tier cosmetics, seasonal recognition (title, possibly a physical/digital reward at operator discretion — out of scope for this codebase) |
+| Tier | Valor Points | Perks |
+|---|---|---|
+| Valor I | 0–4 | No perks. |
+| Valor II | 5–8 | Extended potion effects — effects that are 8 minutes long become 10 minutes; effects that are 1 min 30 sec become 3 minutes. |
+| Valor III | 9–12 | Permanent Speed I. (`/effect give <player> minecraft:speed infinite`) |
+| Valor IV | 13–16 | Permanent Strength I and Speed II. (`/effect give <player> minecraft:speed infinite 1`, `/effect give <player> minecraft:strength infinite`) |
+| Valor V | 16–20 | Permanent Strength II and Speed II. (`/effect give <player> minecraft:speed infinite 1`, `/effect give <player> minecraft:strength infinite 1`) |
 
-## 2. Rank Computation
+- Valor IV and V players may switch their permanent Speed effect between Speed I and Speed II with `/speed set 1|2`.
+- **Note:** the source spec lists Valor IV as `13–16` and Valor V as `16–20`, so point 16 appears in both. Confirm the intended boundary (likely Valor V = `17–20`) before finalizing config thresholds.
 
-- Pure function of current-season `valor_scores.score` against `progression.yml`'s configured thresholds — no hysteresis/stickiness by default (crossing back below a threshold demotes the displayed rank immediately), unless a "rank floor" feature is explicitly requested and designed (not currently planned; would need a `DECISIONS.md` entry given it changes the "rank always reflects current standing" simplicity).
+## 2. Tier Computation
+
+- Pure function of current-season `valor_scores.score` against the fixed thresholds above — no hysteresis/stickiness by default (crossing back below a threshold demotes the displayed tier immediately), unless a "tier floor" feature is explicitly requested and designed (not currently planned; would need a `DECISIONS.md` entry given it changes the "tier always reflects current standing" simplicity).
 - Computed on every Valor score mutation, but `ValorRankChangedEvent` only fires when the *tier* actually changes, not on every point gained (`EVENTS.md`).
 
 ## 3. Display
 
-- Rank is shown in: chat prefix (via `ChatFormatService`, reacting to `ValorRankChangedEvent`), tab list, `/rank` command output, and leaderboard listings.
-- Rank display uses Adventure `Component` with the configured color/style per rank tier — never legacy color codes (`CODING_STANDARDS.md` §9).
+- Tier is shown in: chat prefix (via `ChatFormatService`, reacting to `ValorRankChangedEvent`), tab list, `/rank` command output, and leaderboard listings.
+- Tier display uses Adventure `Component` with the configured color/style per tier — never legacy color codes (`CODING_STANDARDS.md` §9).
 
-## 4. What Rank Gates
+## 4. Season Reset Behavior
 
-- Cosmetic unlock eligibility (`CosmeticsService` checks current rank on `ValorRankChangedEvent` and on-demand at equip time).
-- Crate-type eligibility (some crate tiers require a minimum rank to open, even if the player has a key — `CrateService`).
-- Optionally, specific permission nodes for rank-gated commands/areas, via `RankService`'s mapping (distinct from the permission-tier `RankService` used for staff ranks — naming collision risk flagged for `DECISIONS.md` if both concepts end up needing a class literally named `Rank`; consider `ValorRank` vs `StaffRank` as the disambiguated model names once both are implemented).
+- At season end, current-season tier is archived alongside score (`docs/future-features.md`'s Season Resets section).
+- New season starts every player at Valor I / 0 points, per `docs/valor-system.md` §4.
 
-## 5. Season Reset Behavior
-
-- At season end, current-season rank is archived alongside score (`docs/future-features.md`'s season section).
-- New season starts every player at Unranked/0, per `docs/valor-system.md` §6.
-- Whether all-time/lifetime rank achievements (e.g., "reached Valor Champion at least once") persist across seasons as a separate achievement-style record is the same open question flagged in `docs/valor-system.md` §7.
-
-## 6. Class Responsibilities
+## 5. Class Responsibilities
 
 | Class | Responsibility |
 |---|---|
-| `ValorScoreService` | Score mutation, rank computation, firing `ValorRankChangedEvent` |
-| `Rank` (model) | Enum/value type for the ladder tiers, ordered, with threshold and display metadata loaded from config |
-| `ValorRankChangedEvent` | Domain event carrying old/new rank for a player |
-| `ChatFormatService` (consumer) | Reacts to rank changes to update cached chat prefix |
-| `CosmeticsService` (consumer) | Reacts to rank changes to re-check unlock eligibility |
+| `ValorScoreService` | Score mutation, tier computation, firing `ValorRankChangedEvent`, applying/removing tier perks |
+| `ValorTier` (model) | Enum/value type for the ladder tiers, ordered, with threshold and perk metadata |
+| `ValorRankChangedEvent` | Domain event carrying old/new tier for a player |
+| `ChatFormatService` (consumer) | Reacts to tier changes to update cached chat prefix |

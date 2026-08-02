@@ -6,22 +6,22 @@ Security policy for this codebase. This document takes priority over any conflic
 
 ## 1. Secure Coding Baseline
 
-- All SQL is parameterized (`PreparedStatement` with bound parameters). String-concatenated SQL is forbidden without exception, even for values that "can't possibly" contain injection-relevant characters (player display names can — Minecraft usernames have a constrained charset, but don't rely on that alone; team names, chat-derived input, etc. are less constrained).
-- All player-supplied strings used in commands (claim names, team names) are length-limited and character-set-validated at the point of input, not just at storage time.
+- All SQL is parameterized (`PreparedStatement` with bound parameters). String-concatenated SQL is forbidden without exception, even for values that "can't possibly" contain injection-relevant characters (player display names can — Minecraft usernames have a constrained charset, but don't rely on that alone; chat-derived input, etc. are less constrained).
+- All player-supplied strings used in commands are length-limited and character-set-validated at the point of input, not just at storage time.
 - No use of `Runtime.exec`/`ProcessBuilder` or any shell invocation from within the plugin. There is no legitimate use case for this in a Minecraft plugin's runtime; if one is ever proposed, treat it as a `DECISIONS.md`-worthy exception requiring explicit security sign-off.
 - No deserialization of untrusted data via Java's native object serialization (`ObjectInputStream`). Use explicit, schema-validated formats (JSON via a well-maintained library, or the config/YAML pipeline already in place).
 
 ## 2. Permissions
 
-- Every player-facing command and every protective check (claim access, admin-tier action) has an explicit permission node, declared in `plugin.yml` and checked in code — never inferred from OP status alone as the sole gate for anything beyond genuinely OP-only operations.
-- Permission checks happen in the **command/listener layer** for "can this player invoke this at all," and in the **service layer** for "is this specific action valid given this player's relationship to this specific object" (e.g., "is OP allowed to run `/claim` at all" vs. "is *this* player the owner of *this* claim").
-- Default permission defaults (`default: op`, `default: true`, `default: false` in `plugin.yml`) are chosen conservatively — anything that could affect another player's claim, economy balance, or rank defaults to `op` or an explicit granted permission, never `true` (everyone).
-- Permission nodes follow a consistent hierarchy: `valorsmp.<feature>.<action>` (e.g., `valorsmp.claims.create`, `valorsmp.admin.economy.set`).
+- Every player-facing command and every protective check (tier-gated ability, admin-tier action) has an explicit permission node, declared in `plugin.yml` and checked in code — never inferred from OP status alone as the sole gate for anything beyond genuinely OP-only operations.
+- Permission checks happen in the **command/listener layer** for "can this player invoke this at all," and in the **service layer** for "is this specific action valid given this player's state" (e.g., "is a player allowed to run `/speed` at all" vs. "is *this* player's Valor tier IV or V, which the command requires").
+- Default permission defaults (`default: op`, `default: true`, `default: false` in `plugin.yml`) are chosen conservatively — anything that could affect another player's Valor score or staff rank defaults to `op` or an explicit granted permission, never `true` (everyone).
+- Permission nodes follow a consistent hierarchy: `valorsmp.<feature>.<action>` (e.g., `valorsmp.speed.use`, `valorsmp.admin.reload`).
 
 ## 3. Configuration Validation
 
 - All config values are validated at load time against expected type, range, and (where applicable) enum membership. Invalid values log a clear `WARN` and fall back to a safe default rather than crashing `onEnable` or silently propagating a bad value into gameplay logic (see `CONFIGURATION.md`).
-- Numeric config values that feed into currency or Valor score calculations are range-checked to prevent operator misconfiguration from creating exploitable overflow/negative-balance conditions.
+- Numeric config values that feed into Valor score or tier-threshold calculations are range-checked to prevent operator misconfiguration from creating exploitable overflow/negative-score conditions.
 
 ## 4. Input Validation
 
@@ -31,7 +31,7 @@ Security policy for this codebase. This document takes priority over any conflic
 ## 5. File Access
 
 - The plugin only reads/writes within its own data folder (`plugins/TheValorSMP/`) and the shared server data directory it's explicitly configured to touch (e.g., world folders only via Bukkit API, never direct filesystem manipulation of world data).
-- No user-controllable input is ever used to construct a filesystem path without sanitization (path traversal via a crafted claim/team name into a file path is a real risk class to guard against if any per-entity file ever exists — prefer database storage over per-entity files specifically to avoid this class of bug).
+- No user-controllable input is ever used to construct a filesystem path without sanitization (path traversal via a crafted player-supplied name into a file path is a real risk class to guard against if any per-entity file ever exists — prefer database storage over per-entity files specifically to avoid this class of bug).
 
 ## 6. Dependency Updates
 
@@ -48,17 +48,17 @@ Security policy for this codebase. This document takes priority over any conflic
 ## 8. Rate Limiting / Abuse Prevention
 
 - Commands that are expensive (database writes, broad broadcasts) have per-player cooldowns enforced server-side, not just client-side UX suggestions.
-- Any system involving repeated grant of value (crate opening, quest reward claiming) has server-side safeguards against duplicate/replay exploitation — e.g., idempotent reward-claim checks keyed by a unique completion record, not solely by a client-triggered action with no server-side "already claimed" check.
+- Any system involving repeated grant of value (Valor awards on kills) has server-side safeguards against duplicate/replay exploitation — e.g., a single death must never be counted as multiple kills, and a Valor award is driven only by an authoritative server-side death event, never a client-triggered action.
 - Chat/command spam protections (existing server-level plugins or built-in Paper features) are assumed as a baseline; this plugin's own commands additionally guard against being used as a vector for spam (e.g., a command that broadcasts to the server is rate-limited per player).
 
-## 9. Economy & Valor Integrity (Highest-Risk Area)
+## 9. Valor Integrity (Highest-Risk Area)
 
-Because this system directly represents player-perceived value:
+Because Valor directly represents player-perceived value:
 
-- All balance/score mutations go through a single, auditable path (`EconomyService`, `ValorScoreService`) — never a direct repository write from anywhere else in the codebase.
-- Every mutation that isn't a simple player-initiated transfer (admin grants, quest rewards, crate rewards) is logged with enough detail to reconstruct "who got what, why, and when" after the fact.
-- Duplication bugs are treated as the single highest-severity class of bug in this codebase. Any change touching `EconomyService`, `WalletRepository`, `ValorScoreService`, or `ValorScoreRepository` requires an explicit test for the duplication/double-spend failure mode, not just the happy path (per `AGENTS.md` §12).
-- Balance adjustments are atomic at the database level (single `UPDATE ... SET balance = balance + ?` statement, or an equivalent transaction), never a read-then-write-in-application-code pattern vulnerable to race conditions under concurrent requests.
+- All score mutations go through a single, auditable path (`ValorScoreService`) — never a direct repository write from anywhere else in the codebase.
+- Every mutation that isn't a routine kill/death award (admin grants) is logged with enough detail to reconstruct "who got what, why, and when" after the fact.
+- Duplication bugs are treated as the single highest-severity class of bug in this codebase. Any change touching `ValorScoreService` or `ValorScoreRepository` requires an explicit test for the duplication/double-count failure mode, not just the happy path (per `AGENTS.md` §12).
+- Score adjustments are atomic at the database level (single `UPDATE ... SET score = score + ?` statement, or an equivalent transaction), never a read-then-write-in-application-code pattern vulnerable to race conditions under concurrent requests.
 
 ## 10. Vulnerability Reporting
 

@@ -1,4 +1,4 @@
--- V3: per-season Valor scores (DATABASE.md section 4, `valor_scores`).
+-- V2: per-season Valor scores (DATABASE.md section 4, `valor_scores`).
 CREATE TABLE IF NOT EXISTS valor_scores (
     uuid CHAR(36) NOT NULL,
     season INT NOT NULL,

@@ -67,28 +67,27 @@ SQLite as the zero-config default; MySQL/MariaDB as an opt-in config switch for 
 
 ### Alternatives Considered
 - MySQL-only: simpler codebase (one dialect) but a worse out-of-box experience for small server operators.
-- Flat-file (YAML/JSON) storage: rejected for anything relational (claims, teams, transactions) due to poor query support and concurrency-safety concerns at scale.
+- Flat-file (YAML/JSON) storage: rejected for anything relational (per-player Valor scores, season archives) due to poor query support and concurrency-safety concerns at scale.
 
 ---
 
-## ADR-003: Long Minor-Units for Currency, Never Double
+## ADR-003: Integer Valor Scores, Never Floating Point
 
 **Date:** 2026-07-26
 **Status:** Accepted
 
 ### Context
-Floating-point arithmetic introduces rounding errors that are unacceptable for currency/score values representing real player-perceived value.
+Floating-point arithmetic introduces rounding errors that are unacceptable for a score representing real player-perceived value and used for exact threshold comparisons (tier boundaries).
 
 ### Decision
-All currency and Valor score values are stored and calculated as `long` minor units (or `BigDecimal` where fractional-but-exact values are genuinely needed), never `double`/`float`. See `AI_CONTEXT.md` §4, `SECURITY.md` §9, `DATABASE.md` schema.
+Valor scores are stored and calculated as integers (`int`/`long`), never `double`/`float`. Scores are whole, non-negative, and floored at 0. See `AI_CONTEXT.md` §4, `SECURITY.md` §9, `DATABASE.md` schema.
 
 ### Consequences
-- Easier: exact arithmetic, no accumulated rounding drift over thousands of transactions.
-- Harder: display formatting must explicitly convert minor units to major units for player-facing text (division/formatting logic centralized in `docs/economy.md`'s formatting utility, not scattered ad hoc).
+- Easier: exact arithmetic and exact tier-threshold comparisons, no accumulated rounding drift.
+- Harder: none of note — Valor is inherently a whole-number score, so integers are the natural fit.
 
 ### Alternatives Considered
-- `double`: rejected outright — well-known unacceptable for money due to binary floating-point representation error.
-- `BigDecimal` everywhere: viable, but `long` minor units are simpler and faster for the common case (whole-cent amounts); reserved `BigDecimal` for any future case needing sub-minor-unit precision, which hasn't arisen yet.
+- `double`/`float`: rejected outright — floating-point representation error makes exact threshold comparisons unreliable, and there is no fractional-Valor use case.
 
 ---
 
@@ -98,7 +97,7 @@ All currency and Valor score values are stored and calculated as `long` minor un
 **Status:** Accepted
 
 ### Context
-Many features (Combat, Economy, Progression, Cosmetics, Leaderboards) need to react to each other's outcomes without becoming a tangled web of direct dependencies.
+Many features (Combat, Progression, Leaderboards, Chat) need to react to each other's outcomes without becoming a tangled web of direct dependencies.
 
 ### Decision
 Default to firing a custom Bukkit domain event for cross-feature relationships; reserve direct service-to-service calls for genuinely tight, intentional dependencies (documented explicitly when used). See `ARCHITECTURE.md` §10, `SERVICES.md` §4.

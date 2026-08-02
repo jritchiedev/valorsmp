@@ -16,11 +16,7 @@ How configuration is structured, loaded, validated, and used across the codebase
 src/main/resources/config/
 ├── database.yml
 ├── combat.yml
-├── economy.yml
-├── land-claims.yml
 ├── progression.yml
-├── quests.yml
-├── crates.yml
 ├── ranks.yml
 └── seasons.yml
 ```
@@ -32,38 +28,34 @@ Operator-facing copies land in `plugins/TheValorSMP/config/` at runtime, generat
 Each config file maps to a Java record (or small class hierarchy) deserialized at load time, injected into services via constructor — services never call `plugin.getConfig()` directly (`CODING_STANDARDS.md` §11).
 
 ```java
-public record LandClaimsConfig(
-    int defaultRadius,
-    int maxClaimsPerPlayer,
-    Map<ClaimFlag, String> defaultFlags
+public record ValorTiersConfig(
+    List<Integer> tierThresholds,
+    boolean extendedPotionEffects
 ) {
-    public static LandClaimsConfig load(ConfigurationSection section) {
-        int radius = section.getInt("default-radius", 20);
-        if (radius <= 0) {
-            LOGGER.warn("land-claims.default-radius must be positive; using default 20");
-            radius = 20;
+    public static ValorTiersConfig load(ConfigurationSection section) {
+        List<Integer> thresholds = section.getIntegerList("tier-thresholds");
+        if (thresholds.size() != 5) {
+            LOGGER.warn("progression.tier-thresholds must list 5 tiers; using defaults");
+            thresholds = List.of(0, 5, 9, 13, 17);
         }
         // ... remaining fields, each validated similarly
-        return new LandClaimsConfig(radius, maxClaims, flags);
+        return new ValorTiersConfig(thresholds, section.getBoolean("extended-potion-effects", true));
     }
 }
 ```
 
 ```yaml
-# land-claims.yml
-default-radius: 20
-max-claims-per-player: 3
-default-flags:
-  pvp: "true"
-  mob-spawning: "true"
-  explosions: "false"
+# progression.yml
+# Minimum Valor Points required to reach each tier (I..V).
+tier-thresholds: [0, 5, 9, 13, 17]
+extended-potion-effects: true
 ```
 
 ## 4. Validation Rules
 
 - Every load method validates type, range, and (for enum-backed keys) membership.
 - Invalid values log a `WARN` with the exact key, the invalid value, and the default being substituted — never fail silently, never crash `onEnable` over a single bad value (a typo in one feature's config shouldn't take down the whole plugin) unless the value is safety-critical enough that running with a default would be actively worse (rare; document explicitly if this path is taken for a specific key).
-- Currency- and Valor-affecting numeric config (drop rates, reward amounts, starting balances) is range-checked to prevent operator misconfiguration from creating an exploitable condition (`SECURITY.md` §3).
+- Valor-affecting numeric config (tier thresholds, cooldown durations) is range-checked to prevent operator misconfiguration from creating an exploitable condition (`SECURITY.md` §3).
 
 ## 5. Config Migration (New Keys in Existing Files)
 
@@ -83,13 +75,9 @@ When a feature PR adds a new config key to an existing file:
 | File | Hot-reloadable? | Notes |
 |---|---|---|
 | `database.yml` | No | Requires restart to change backend/connection settings |
-| `combat.yml` | Yes | Tag duration, PvP zone rules |
-| `economy.yml` | Yes | Starting balance, transaction limits |
-| `land-claims.yml` | Yes | Radius/limits/default flags |
-| `progression.yml` | Yes | Valor scoring formulas' tunable constants, rank thresholds |
-| `quests.yml` | Partially | New/changed quest *definitions* reload; in-progress player quest *state* is unaffected until completion |
-| `crates.yml` | Yes | Drop tables/weights |
-| `ranks.yml` | Partially | New rank definitions reload; currently-online players' displayed rank refreshes on next permission recalculation |
+| `combat.yml` | Yes | Item-ability cooldowns (mace, spear lunge), death-drop behavior |
+| `progression.yml` | Yes | Valor tier thresholds and per-tier perk settings |
+| `ranks.yml` | Partially | New staff rank definitions reload; currently-online players' displayed rank refreshes on next permission recalculation |
 | `seasons.yml` | No | Season boundaries/timing should not change mid-season without an explicit `DECISIONS.md`-documented operational procedure |
 
 ## 8. Secrets

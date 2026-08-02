@@ -13,7 +13,7 @@ A repository is responsible for exactly one thing: **translating between domain 
 - Managing prepared statements / query construction.
 - Owning the SQL schema for its table(s) (in coordination with `DATABASE.md`'s migration files).
 
-A repository does **not** decide whether an operation is *allowed* — that's the service's job. A repository method like `save(LandClaim claim)` saves whatever valid `LandClaim` object it's given; it doesn't check whether the claim overlaps another one.
+A repository does **not** decide whether an operation is *allowed* — that's the service's job. A repository method like `addScore(uuid, delta)` writes whatever delta it's given; it doesn't decide whether the score should be floored at 0 (that's `ValorScoreService`).
 
 ## 2. Interface Convention
 
@@ -22,21 +22,21 @@ A repository does **not** decide whether an operation is *allowed* — that's th
 - Test implementation: `InMemory<Noun>Repository`, living in `src/test/java`, used by service unit tests so they never require a real database connection.
 
 ```java
-public interface LandClaimRepository {
+public interface ValorScoreRepository {
 
-    Optional<LandClaim> findById(UUID claimId);
-
-    List<LandClaim> findByOwner(UUID ownerId);
+    Optional<Integer> findScore(UUID playerId, int season);
 
     /**
-     * @return all claims whose bounding box intersects the given region.
-     *         Used for overlap checking at claim-creation time.
+     * Atomically applies {@code delta} to the player's current-season score and
+     * returns the new value. Flooring at 0 is the service's responsibility.
      */
-    List<LandClaim> findIntersecting(RegionBounds bounds);
+    int addScore(UUID playerId, int season, int delta);
 
-    LandClaim save(LandClaim claim);
-
-    void delete(UUID claimId);
+    /**
+     * @return the top {@code n} players by score for the given season,
+     *         highest first. Used for leaderboard display.
+     */
+    List<ScoreEntry> topN(int season, int n);
 }
 ```
 
@@ -48,7 +48,7 @@ public interface LandClaimRepository {
 
 ## 4. Caching
 
-- Any read-heavy repository may implement an internal cache (e.g., a `CachingLandClaimRepository` decorator wrapping `SqlLandClaimRepository`), but the cache is an implementation detail behind the same interface — services are never aware a cache exists.
+- Any read-heavy repository may implement an internal cache (e.g., a `CachingValorScoreRepository` decorator wrapping `SqlValorScoreRepository`), but the cache is an implementation detail behind the same interface — services are never aware a cache exists.
 - Cache invalidation happens on every write path through the same repository instance; there is no separate "invalidate cache" method exposed to services.
 - Any cache must have a bounded size or TTL. Unbounded caches are a `SECURITY.md`/`PERFORMANCE.md` concern (memory exhaustion over a long-running server uptime).
 
@@ -57,16 +57,8 @@ public interface LandClaimRepository {
 | Repository | Backing Table(s) | Key Queries | Notes |
 |---|---|---|---|
 | `PlayerProfileRepository` | `player_profiles` | `findByUuid`, `save` | One row per player, created on first join |
-| `ValorScoreRepository` | `valor_scores` | `findByUuid`, `addScore`, `topN` (leaderboard) | Season-scoped; see `DATABASE.md` for season partitioning |
-| `WalletRepository` | `wallets` | `findByUuid`, `adjustBalance` (atomic) | Balance stored as `long` minor units, never `double` |
-| `LandClaimRepository` | `land_claims`, `land_claim_flags` | `findByOwner`, `findIntersecting`, `save`, `delete` | Spatial intersection done in application code against a bounding-box index column, not full geometric SQL |
-| `TeamRepository` | `teams`, `team_members` | `findById`, `findByMember`, `save` | Membership is a join table |
-| `QuestRepository` | `quests`, `quest_progress` | `findActiveForPlayer`, `saveProgress` | Quest definitions may be config-driven rather than DB-driven; progress is always DB-driven |
-| `AchievementRepository` | `achievements_unlocked` | `findUnlockedByPlayer`, `unlock` | Achievement *definitions* live in config; unlock *state* is DB |
-| `ServerEventRepository` | `server_events` | `findActive`, `save` | Timed events; history retained for leaderboard/stat purposes |
-| `CosmeticRepository` | `cosmetic_unlocks`, `cosmetic_equipped` | `findUnlockedByPlayer`, `setEquipped` | |
-| `CrateRepository` | `crate_keys`, `crate_open_log` | `findKeysByPlayer`, `consumeKey`, `logOpen` | Open log used for auditing drop-rate fairness |
-| `RankRepository` | `player_ranks` | `findByUuid`, `setRank` | Rank *definitions*/permission mappings live in config |
+| `ValorScoreRepository` | `valor_scores` | `findScore`, `addScore` (atomic), `topN` (leaderboard) | Season-scoped; see `DATABASE.md` for season partitioning |
+| `RankRepository` | `player_ranks` | `findByUuid`, `setRank` | Staff rank *definitions*/permission mappings live in config |
 | `SeasonRepository` | `seasons`, `season_archives` | `findCurrent`, `archiveSeason` | Archival, never destructive deletion, per `AGENTS.md` §12 |
 
 Full schema (columns, types, indexes, migrations) lives in `DATABASE.md` — this table is the responsibility index, not the schema itself.
@@ -75,4 +67,4 @@ Full schema (columns, types, indexes, migrations) lives in `DATABASE.md` — thi
 
 - Every production `Sql<Noun>Repository` has an integration test running against a real (in-memory or temp-file) SQLite instance, verifying actual SQL correctness — not just mocked behavior.
 - Every repository interface has an `InMemory<Noun>Repository` test double kept behaviorally consistent with the real implementation (same query semantics), used across all service unit tests for that aggregate.
-- Repository-level tests do not test business rules — only that data goes in and comes back out correctly, including edge cases like concurrent balance adjustment (`adjustBalance` must be atomic — test for race conditions where feasible, e.g., via a transaction-level `UPDATE ... SET balance = balance + ?` rather than read-modify-write).
+- Repository-level tests do not test business rules — only that data goes in and comes back out correctly, including edge cases like concurrent score adjustment (`addScore` must be atomic — test for race conditions where feasible, e.g., via a transaction-level `UPDATE ... SET score = score + ?` rather than read-modify-write).

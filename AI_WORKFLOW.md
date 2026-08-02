@@ -40,7 +40,7 @@ flowchart TD
 - Write the design note (can be the PR description if the change is small).
 
 **✅ Checkpoint 1 — Design Review**
-For anything introducing a new service, a new table, or a new permission node: a human (or designated senior-review agent) reviews the design note *before* implementation begins. Small, well-precedented changes (e.g., adding a new quest of an existing quest type) can skip this checkpoint — use judgment per `AGENTS.md` §11.
+For anything introducing a new service, a new table, or a new permission node: a human (or designated senior-review agent) reviews the design note *before* implementation begins. Small, well-precedented changes (e.g., adding a new tier perk of an existing shape) can skip this checkpoint — use judgment per `AGENTS.md` §11.
 
 ---
 

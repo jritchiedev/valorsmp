@@ -53,7 +53,7 @@ Note the null-check after hopping back to the main thread — the player may hav
 
 - Never optimize based on a guess. Use Paper's `/timings` (or its current equivalent) or a lightweight in-code timer around the suspected hot path to confirm where time is actually going before changing anything.
 - For anything claimed as a performance fix in a PR description, state the actual before/after measurement, not an estimate (`AI_RULES.md` §1.7, `TESTING.md` §6).
-- JMH micro-benchmarks are appropriate for isolated algorithmic hot spots (e.g., "which data structure is faster for claim boundary lookups at N=10,000 claims") but overkill for most feature-level performance questions, where a real-server before/after TPS/MSPT comparison is more representative and less effort.
+- JMH micro-benchmarks are appropriate for isolated algorithmic hot spots (e.g., "which data structure is faster for leaderboard top-N lookups at N=10,000 players") but overkill for most feature-level performance questions, where a real-server before/after TPS/MSPT comparison is more representative and less effort.
 
 ## 5. Memory
 

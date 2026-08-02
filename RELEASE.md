@@ -26,20 +26,20 @@ Maintained as `CHANGELOG.md` at repo root (generated/updated per release, follow
 ## [1.4.0] - 2026-08-15
 
 ### Added
-- Land claim flags: owners can now toggle PvP, mob spawning, and explosion
-  protection per-claim. (#142)
+- Valor tier IV/V players can now switch their permanent Speed effect
+  between Speed I and Speed II with `/speed set 1|2`. (#142)
 
 ### Changed
-- Valor score gains from quest completion now scale with quest tier
-  instead of a flat amount. (#151)
+- The mace's cooldown is now enforced server-side and is no longer bypassable
+  by rapid re-equipping. (#151)
 
 ### Fixed
-- Fixed a race condition in wallet balance updates that could, under rare
-  concurrent conditions, cause a balance change to be lost. (#158)
+- Fixed a race condition in Valor score updates that could, under rare
+  concurrent conditions, cause a kill's +1 award to be lost. (#158)
 
 ### Security
-- Patched a permission check gap allowing non-owners to view (but not
-  modify) another player's claim flags. (#160)
+- Patched a gap where a single death could, under lag, be counted as more than
+  one kill for Valor purposes. (#160)
 ```
 
 Categories used: `Added`, `Changed`, `Fixed`, `Security`, `Deprecated`, `Removed`, `Performance`. Omit empty categories for a given release. Written in player/operator-facing language, not internal implementation detail — see the release-notes prompt template in `PROMPTS.md`.

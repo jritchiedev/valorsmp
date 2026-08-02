@@ -52,7 +52,7 @@ that apply.]
 ### Testing Notes
 [Specific scenarios that must be covered beyond the generic Definition of Done
 bar — e.g., "must include a duplication-safety test per SECURITY.md §9" for
-anything economy-related.]
+anything Valor-scoring-related.]
 ```
 
 ---
@@ -60,45 +60,44 @@ anything economy-related.]
 ## Worked Example
 
 ```markdown
-## [VAL-142] Allow claim owners to toggle per-claim protection flags
+## [VAL-142] Award +1/-1 Valor on PvP kills and deaths
 
 **Type:** Story
-**Parent:** [VAL-100] (Epic: Land & Social Systems — Milestone 2)
+**Parent:** [VAL-100] (Epic: Core Progression & Combat — Milestone 1)
 **Priority:** High
 
 ### Description
-Claim owners currently get an all-or-nothing protection package. They need
-granular control (PvP on/off, mob spawning on/off, explosions on/off) within
-their own claim.
+Valor is the server's core progression score. A player who kills another player
+should gain a Valor Point, and a player killed by another player should lose
+one, so that Valor reflects PvP performance.
 
 ### Acceptance Criteria
-- [ ] `/claim flag <key> <value>` lets the owner (or a permitted delegate) set
-  a flag on their claim
-- [ ] Non-owners without permission cannot change flags
-- [ ] Flags persist across restarts
-- [ ] Unset flags fall back to `land-claims.yml`'s configured defaults
-- [ ] Invalid flag key/value combinations are rejected with a clear message
+- [ ] Killing a player awards the killer +1 Valor Point and shows the "gained"
+  message from docs/valor-system.md
+- [ ] Dying to a player deducts 1 Valor Point (floored at 0) and shows the
+  "lost" message
+- [ ] Score never goes below 0
+- [ ] Crossing a tier threshold (every 4 points) fires ValorRankChangedEvent
+- [ ] Changes persist across restarts
 
 ### Definition of Done
 - [ ] Code implemented following ARCHITECTURE.md / CODING_STANDARDS.md
-- [ ] Unit tests: LandClaimServiceTest covering owner/non-owner/invalid-value cases
-- [ ] Integration tests: ClaimFlagCommandIntegrationTest,
-  ClaimProtectionListenerIntegrationTest
-- [ ] docs/future-features.md's land-claims section updated (or promoted to
-  docs/land-claims.md)
-- [ ] CONFIGURATION.md updated with `land-claims.default-flags.*`
-- [ ] EVENTS.md updated with LandClaimFlagChangedEvent
+- [ ] Unit tests: ValorScoreServiceTest covering award/deduct/floor/tier-change cases
+- [ ] Integration tests: CombatListenerIntegrationTest
+- [ ] docs/valor-system.md and docs/combat.md kept in sync
+- [ ] CONFIGURATION.md updated with `progression.tier-thresholds`
+- [ ] EVENTS.md updated with PlayerKilledEvent / ValorRankChangedEvent
 - [ ] PR merged with human approval
 - [ ] Deployed and post-deploy-verified
 
 ### Technical Notes
 See FEATURES.md's worked example for this exact feature — full design already
-sketched there. Reuses existing LandClaimService/LandClaimRepository; adds new
-methods rather than new classes.
+sketched there. Score mutation goes exclusively through ValorScoreService
+(SECURITY.md §9); the floor at 0 lives in the service, not the repository.
 
 ### Testing Notes
-Explicitly test the permission-denial path (non-owner attempting to set a flag)
-since this is a protection-integrity concern, not just a happy-path feature.
+Explicitly test the duplication path (a single death must never be counted as
+multiple kills) per SECURITY.md §9, not just the happy path.
 ```
 
 ## Ticket ID Convention

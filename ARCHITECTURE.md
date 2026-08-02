@@ -12,7 +12,7 @@ Goals this architecture serves:
 
 - **Testability**: business logic is separable from the Bukkit runtime.
 - **Replaceability**: storage backends, and even entire services, can be swapped via interfaces.
-- **Low coupling between features**: Combat doesn't call Economy directly; it publishes an event, and Economy decides whether to react.
+- **Low coupling between features**: Combat doesn't call Leaderboards directly; it publishes an event, and Leaderboards decides whether to react.
 - **Predictable dependency direction**: no cycles, no "just reach into the manager from anywhere" shortcuts.
 
 ---
@@ -34,7 +34,7 @@ flowchart TD
 
 - Implement `org.bukkit.event.Listener` or Paper's `Command`/Brigadier-based executor.
 - Responsibilities: parse Bukkit-native input (events, command args), call exactly one (or a small, clearly composed set of) service method(s), translate the result into player-facing feedback (messages, sounds, particles).
-- **Must not** contain conditionals that encode business rules (e.g., "can this player claim this land" belongs in `LandClaimService`, not in the listener).
+- **Must not** contain conditionals that encode business rules (e.g., "does this kill change the killer's Valor tier" belongs in `ValorScoreService`, not in the listener).
 - **Must** be cheap and fast; anything expensive is delegated to a service, which may itself delegate to an async-safe repository call.
 
 ### 2.2 Services
@@ -43,18 +43,18 @@ flowchart TD
 - Own business rules, validation, and orchestration across repositories.
 - Should be unit-testable with zero Bukkit runtime present, wherever the logic doesn't intrinsically require Bukkit types (e.g., an `ItemStack`). Where Bukkit types are unavoidable (inventory manipulation), isolate that portion and keep decision logic Bukkit-free.
 - Publish domain events (see `EVENTS.md`) rather than calling other services directly when the relationship is "feature B reacts to feature A", to keep features decoupled.
-- May call other services directly when the relationship is a genuine, tight, intentional dependency (e.g., `LandClaimService` calling `PermissionService` to check a flag) — this is a deliberate composition, not decoupled notification, and should be documented as such in Javadoc.
+- May call other services directly when the relationship is a genuine, tight, intentional dependency (e.g., `CombatService` calling `ValorScoreService` to award a kill) — this is a deliberate composition, not decoupled notification, and should be documented as such in Javadoc.
 
 ### 2.3 Repositories
 
-- Interface + implementation pair per aggregate (e.g., `LandClaimRepository` / `SqlLandClaimRepository`).
+- Interface + implementation pair per aggregate (e.g., `ValorScoreRepository` / `SqlValorScoreRepository`).
 - Own all persistence concerns: SQL, caching of reads, mapping between database rows and domain models.
 - Never contain business rules — only data shape and query logic.
-- Every repository interface has an in-memory test implementation (`InMemoryLandClaimRepository`) used in unit tests, so service tests never touch a real database.
+- Every repository interface has an in-memory test implementation (`InMemoryValorScoreRepository`) used in unit tests, so service tests never touch a real database.
 
 ### 2.4 Managers
 
-- Coordinate **runtime state** that isn't naturally "a repository of persisted data" — e.g., active combat tags with expiry timers, an in-memory leaderboard cache refreshed on a schedule, currently-open GUI sessions.
+- Coordinate **runtime state** that isn't naturally "a repository of persisted data" — e.g., item-ability cooldown timers (the mace's 30s cooldown, the spear's lunge cooldown), an in-memory leaderboard cache refreshed on a schedule, currently-open GUI sessions.
 - Managers may hold Bukkit scheduler tasks. Services generally should not schedule tasks directly; they ask a manager to do so, or return data that a listener/manager uses to schedule.
 
 ### 2.5 Utilities
@@ -89,18 +89,18 @@ public final class CompositionRoot {
 
     public ServiceRegistry build() {
         // Repositories
-        LandClaimRepository landClaimRepository =
-            new SqlLandClaimRepository(plugin.getDataSource());
+        ValorScoreRepository valorScoreRepository =
+            new SqlValorScoreRepository(plugin.getDataSource());
 
         // Services
-        LandClaimService landClaimService =
-            new LandClaimService(landClaimRepository, plugin.getConfigService().landClaims());
+        ValorScoreService valorScoreService =
+            new ValorScoreService(valorScoreRepository, plugin.getConfigService().valorTiers());
 
         // Listeners (registered, not stored beyond registration)
         plugin.getServer().getPluginManager()
-            .registerEvents(new LandClaimListener(landClaimService), plugin);
+            .registerEvents(new CombatListener(valorScoreService), plugin);
 
-        return new ServiceRegistry(landClaimService /*, ... */);
+        return new ServiceRegistry(valorScoreService /*, ... */);
     }
 }
 ```
@@ -156,7 +156,7 @@ sequenceDiagram
 ```
 
 - On join: load-or-create the player's profile asynchronously where the repository supports it, apply to the player synchronously once loaded (Bukkit API calls affecting the player must be on the main thread).
-- On quit: services flush any dirty in-memory state to repositories; managers clear ephemeral session state (open GUIs, combat tags past their timer, etc., though combat tags should persist across a quick relog per `docs/combat.md`).
+- On quit: services flush any dirty in-memory state to repositories; managers clear ephemeral session state (open GUIs, etc.). There is no combat tagging, so quitting mid-fight carries no combat-state consequence (`docs/combat.md`).
 
 ---
 
@@ -176,7 +176,7 @@ flowchart LR
 
 ## 7. Feature Lifecycle
 
-Every feature (Combat, Economy, Land Claims, etc.) follows the same shape:
+Every feature (Combat, Progression, Seasons, etc.) follows the same shape:
 
 1. **Models** describing its domain objects.
 2. **Repository** for persistence.
@@ -195,13 +195,13 @@ A feature is a **vertical slice** through every layer, not a single class.
 
 | Layer | Example Class | Owns | Does NOT own |
 |---|---|---|---|
-| Listener | `LandClaimListener` | Translating `BlockBreakEvent` into a service call | Whether the break is allowed |
-| Command | `ClaimCommand` | Parsing `/claim` args, permission gate at the "can run this command at all" level | Fine-grained business permission checks |
-| Service | `LandClaimService` | Claim creation, boundary checks, ownership transfer rules | SQL, table schema |
-| Repository | `SqlLandClaimRepository` | Persisting/querying claims | Whether a claim is "valid" |
-| Manager | `CombatTagManager` | In-memory tag expiry, scheduling untag tasks | Whether tagging is allowed at all (that's `CombatService`) |
-| Model | `LandClaim` | Data shape, basic invariants (e.g., non-negative radius) | Any cross-object business rule |
-| Event | `LandClaimCreatedEvent` | Carrying immutable facts about what happened | Deciding what happens next |
+| Listener | `CombatListener` | Translating `PlayerDeathEvent` into a service call | Whether/how much Valor is awarded |
+| Command | `SpeedCommand` | Parsing `/speed set 1\|2` args, permission gate at the "can run this command at all" level | Whether the player's tier permits it |
+| Service | `ValorScoreService` | Score mutation, tier computation, applying tier perks | SQL, table schema |
+| Repository | `SqlValorScoreRepository` | Persisting/querying scores | Whether a score change is "valid" |
+| Manager | `AbilityCooldownManager` | In-memory item-ability cooldown timers (mace, spear lunge) | Whether an ability is allowed at all (that's the owning service) |
+| Model | `ValorTier` | Data shape, basic invariants (ordered tiers, thresholds) | Any cross-object business rule |
+| Event | `ValorRankChangedEvent` | Carrying immutable facts about what happened | Deciding what happens next |
 
 ---
 
@@ -213,23 +213,20 @@ net.thevalorsmp
 │   ├── ValorPlugin.java
 │   ├── CompositionRoot.java
 │   └── ServiceRegistry.java
-├── landclaims
-│   ├── model/LandClaim.java
-│   ├── model/ClaimFlag.java
-│   ├── repository/LandClaimRepository.java
-│   ├── repository/SqlLandClaimRepository.java
-│   ├── repository/InMemoryLandClaimRepository.java   (test-only, in src/test)
-│   ├── service/LandClaimService.java
-│   ├── events/LandClaimCreatedEvent.java
-│   ├── events/LandClaimTransferredEvent.java
-│   ├── listener/LandClaimProtectionListener.java
-│   └── command/ClaimCommand.java
-├── economy
-│   ├── model/Wallet.java
-│   ├── repository/WalletRepository.java
-│   ├── service/EconomyService.java
-│   ├── events/BalanceChangedEvent.java
-│   └── command/BalanceCommand.java
+├── progression
+│   ├── model/ValorTier.java
+│   ├── repository/ValorScoreRepository.java
+│   ├── repository/SqlValorScoreRepository.java
+│   ├── repository/InMemoryValorScoreRepository.java   (test-only, in src/test)
+│   ├── service/ValorScoreService.java
+│   ├── events/ValorRankChangedEvent.java
+│   ├── listener/ValorTierPerkListener.java
+│   └── command/RankCommand.java
+├── combat
+│   ├── service/CombatService.java
+│   ├── events/PlayerKilledEvent.java
+│   ├── listener/CombatListener.java
+│   └── command/SpeedCommand.java
 └── ...
 ```
 
@@ -242,14 +239,13 @@ Every feature package is internally organized the same way: `model/`, `repositor
 ```mermaid
 flowchart LR
     Combat[Combat Service] -- fires --> PlayerKilledEvent
-    PlayerKilledEvent --> Economy[Economy Service]
     PlayerKilledEvent --> Progression[Progression Service]
     PlayerKilledEvent --> Leaderboards[Leaderboard Service]
-    Economy -- fires --> BalanceChangedEvent
-    BalanceChangedEvent --> Cosmetics[Cosmetics Service - unlock check]
+    Progression -- fires --> ValorRankChangedEvent
+    ValorRankChangedEvent --> Chat[Chat Format Service]
 ```
 
-Combat has no compile-time dependency on Economy, Progression, or Leaderboards. This is the core decoupling mechanism of the architecture and must be preserved as new features are added.
+Combat has no compile-time dependency on Leaderboards, and Progression has none on Chat. This is the core decoupling mechanism of the architecture and must be preserved as new features are added.
 
 ---
 

@@ -52,66 +52,61 @@ As a [player/operator], I want to [action], so that [benefit].
 
 ---
 
-## Worked Example: "Land Claim Flags" Feature
+## Worked Example: "Valor Kill/Death Points" Feature
 
 ```markdown
-# Land Claim Flags
+# Valor Kill/Death Points
 
 ## User Story
-As a claim owner, I want to toggle specific protections (PvP, mob spawning,
-explosions) within my claim, so that I can customize how my land behaves.
+As a player, I want to gain a Valor Point for killing another player and lose
+one when I'm killed by a player, so that my Valor score reflects my PvP record.
 
 ## Acceptance Criteria
-- [ ] Claim owner can set a flag via `/claim flag <key> <value>`
-- [ ] Non-owners (without a delegated permission) cannot change flags
-- [ ] Flags persist across server restarts
-- [ ] Unset flags fall back to server-wide defaults from config
-- [ ] Invalid flag keys/values are rejected with a clear player-facing message
+- [ ] Killing a player awards the killer +1 Valor Point
+- [ ] The killer sees "You've gained 1 Valor Point from killing a player. You
+      now have <current valor> Valor Points."
+- [ ] Dying to a player deducts 1 Valor Point from the victim (floored at 0)
+- [ ] The victim sees "You've lost 1 Valor Point due to dying. You now have
+      <current valor> Valor Points."
+- [ ] Score never goes below 0
+- [ ] A tier change (every 4 points) is reflected immediately
 
 ## Architecture
-- Services modified: `LandClaimService` (add `setFlag`, `getFlag`)
-- Repositories modified: `LandClaimRepository` (add flag read/write methods
-  backed by `land_claim_flags`)
-- Models modified: `LandClaim` gains a `Map<ClaimFlag, String> flags` field
-- Domain events introduced: `LandClaimFlagChangedEvent`
-- Config keys introduced: `land-claims.default-flags.*`
+- Services introduced: `ValorScoreService` (add `awardKill`), `CombatService`
+- Repositories introduced: `ValorScoreRepository` (backed by `valor_scores`)
+- Models introduced: `ValorTier`
+- Domain events introduced: `PlayerKilledEvent`, `ValorRankChangedEvent`
+- Config keys introduced: `valor.tiers.*`
 
 ## Classes
 | Class | Layer | Responsibility |
 |---|---|---|
-| `ClaimFlag` | model (enum) | Known flag keys and their value types |
-| `LandClaimService#setFlag` | service | Validates permission + value, persists, fires event |
-| `SqlLandClaimRepository` | repository | Reads/writes `land_claim_flags` |
-| `ClaimFlagCommand` | command | Parses `/claim flag ...`, calls service, reports result |
-| `ClaimProtectionListener` | listener | Consults `LandClaimService#getFlag` on relevant Bukkit events (e.g., `EntityDamageByEntityEvent` for PvP flag) |
+| `ValorTier` | model (enum) | Ordered tiers I–V with thresholds and perk metadata |
+| `ValorScoreService#awardKill` | service | Applies +1/-1 (floored at 0), computes tier, fires event |
+| `SqlValorScoreRepository` | repository | Reads/writes `valor_scores` |
+| `CombatListener` | listener | Translates `PlayerDeathEvent` (player killer) into a service call and messages both players |
 
 ## Data Model
-See `DATABASE.md` §"land_claim_flags". No migration needed if the table
-already exists from initial claims implementation; otherwise, additive
-migration `V<n>__add_land_claim_flags.sql`.
+See `DATABASE.md` §"valor_scores". Created by migration
+`V2__init_valor_scores.sql`.
 
 ## Tests
-- Unit: `LandClaimServiceTest#setFlag_asOwner_succeeds`,
-  `#setFlag_asNonOwnerWithoutPermission_rejected`,
-  `#getFlag_unset_returnsConfigDefault`
-- Integration: `ClaimFlagCommandIntegrationTest` (MockBukkit) verifying command
-  parsing and player-facing feedback messages;
-  `ClaimProtectionListenerIntegrationTest` verifying PvP flag actually
-  cancels damage when set to `false`
+- Unit: `ValorScoreServiceTest#awardKill_incrementsKillerDecrementsVictim`,
+  `#awardKill_victimAtZero_staysAtZero`,
+  `#awardKill_crossingThreshold_firesRankChanged`
+- Integration: `CombatListenerIntegrationTest` (MockBukkit) verifying a PvP
+  death awards/deducts points and sends the correct player-facing messages
 
 ## Documentation
-- [x] docs/future-features.md's land-claims section updated (or promoted to
-  its own docs/land-claims.md if this is the feature that crosses that
-  threshold)
-- [x] CONFIGURATION.md updated with `land-claims.default-flags.*`
+- [x] docs/valor-system.md and docs/combat.md updated
+- [x] CONFIGURATION.md updated with `valor.tiers.*`
 - [ ] API.md — not applicable, no external API change
-- [x] EVENTS.md updated with `LandClaimFlagChangedEvent`
+- [x] EVENTS.md updated with `PlayerKilledEvent`, `ValorRankChangedEvent`
 
 ## Review Checklist
 - [x] Follows ARCHITECTURE.md layering
 - [x] Follows CODING_STANDARDS.md
 - [x] Meets TESTING.md minimum coverage bar
-- [x] No SECURITY.md concerns unaddressed (permission check tested explicitly)
-- [x] Config defaults are sane (all flags default to server's existing
-  vanilla-equivalent behavior unless explicitly documented otherwise)
+- [x] No SECURITY.md concerns unaddressed (score floor enforced in service)
+- [x] Config defaults are sane (tier thresholds match docs/progression.md)
 ```

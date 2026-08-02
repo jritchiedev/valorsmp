@@ -85,7 +85,7 @@ jobs:
         if: success()
 ```
 
-Deployment to production is gated on a passing staging smoke test. A manual approval gate before the production deploy step is recommended for this project's risk profile (real player data, real economy) — configure as a GitHub Environments protection rule requiring a human approval, rather than fully automatic production deploys, until the release process has a long track record of staging smoke tests reliably catching problems.
+Deployment to production is gated on a passing staging smoke test. A manual approval gate before the production deploy step is recommended for this project's risk profile (real player data, real Valor standings) — configure as a GitHub Environments protection rule requiring a human approval, rather than fully automatic production deploys, until the release process has a long track record of staging smoke tests reliably catching problems.
 
 ## 4. Versioning
 

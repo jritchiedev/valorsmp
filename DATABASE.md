@@ -48,74 +48,6 @@ Backend is selected via `config/database.yml` (`CONFIGURATION.md`). Repository S
 | `score` | `BIGINT` | Never negative; floor at 0 enforced in service layer |
 | `updated_at` | `TIMESTAMP` | |
 
-### `wallets`
-| Column | Type | Notes |
-|---|---|---|
-| `uuid` | `CHAR(36)` PK | FK → `player_profiles.uuid` |
-| `balance_minor_units` | `BIGINT` | **Never** `DOUBLE`/`FLOAT`. Minor units (e.g., cents) per `docs/economy.md` |
-| `updated_at` | `TIMESTAMP` | |
-
-### `land_claims`
-| Column | Type | Notes |
-|---|---|---|
-| `id` | `CHAR(36)` PK | |
-| `owner_uuid` | `CHAR(36)` | Nullable if owned by a team instead |
-| `team_id` | `CHAR(36)` | Nullable if owned by a player instead |
-| `world` | `VARCHAR(64)` | |
-| `min_x`,`min_z`,`max_x`,`max_z` | `INT` | Bounding box; indexed for intersection queries |
-| `created_at` | `TIMESTAMP` | |
-
-### `land_claim_flags`
-| Column | Type | Notes |
-|---|---|---|
-| `claim_id` | `CHAR(36)` | FK → `land_claims.id` |
-| `flag_key` | `VARCHAR(64)` | e.g. `pvp`, `mob-spawning` |
-| `flag_value` | `VARCHAR(64)` | Stored as string, parsed by service layer |
-
-### `teams` / `team_members`
-| Table | Column | Type | Notes |
-|---|---|---|---|
-| `teams` | `id` | `CHAR(36)` PK | |
-| `teams` | `name` | `VARCHAR(32)` | Unique |
-| `teams` | `created_at` | `TIMESTAMP` | |
-| `team_members` | `team_id`, `uuid` | `CHAR(36)` each | Composite PK |
-| `team_members` | `role` | `VARCHAR(16)` | e.g. `owner`, `member` |
-
-### `quests` / `quest_progress`
-| Table | Column | Type | Notes |
-|---|---|---|---|
-| `quests` | `id` | `VARCHAR(64)` PK | Definition may be config-mirrored; DB row tracks metadata for stats |
-| `quest_progress` | `uuid`, `quest_id` | Composite PK | |
-| `quest_progress` | `progress_json` | `TEXT` | Structured progress payload, shape defined per quest type |
-| `quest_progress` | `completed_at` | `TIMESTAMP` | Nullable |
-
-### `achievements_unlocked`
-| Column | Type | Notes |
-|---|---|---|
-| `uuid`, `achievement_id` | Composite PK | |
-| `unlocked_at` | `TIMESTAMP` | |
-
-### `server_events`
-| Column | Type | Notes |
-|---|---|---|
-| `id` | `CHAR(36)` PK | |
-| `event_type` | `VARCHAR(64)` | |
-| `started_at`,`ended_at` | `TIMESTAMP` | `ended_at` nullable while active |
-| `result_json` | `TEXT` | Nullable until concluded |
-
-### `cosmetic_unlocks` / `cosmetic_equipped`
-| Table | Column | Type | Notes |
-|---|---|---|---|
-| `cosmetic_unlocks` | `uuid`, `cosmetic_id` | Composite PK | |
-| `cosmetic_equipped` | `uuid`, `slot` | Composite PK | e.g. slot = `hat`, `trail` |
-
-### `crate_keys` / `crate_open_log`
-| Table | Column | Type | Notes |
-|---|---|---|---|
-| `crate_keys` | `uuid`, `crate_type` | Composite key with `quantity` | |
-| `crate_open_log` | `id` | `BIGINT` PK auto-increment | |
-| `crate_open_log` | `uuid`,`crate_type`,`reward_id`,`opened_at` | | Audit trail for drop-rate fairness |
-
 ### `player_ranks`
 | Column | Type | Notes |
 |---|---|---|
@@ -131,9 +63,9 @@ Backend is selected via `config/database.yml` (`CONFIGURATION.md`). Repository S
 
 ## 5. Indexing Guidance
 
-- Every foreign-key-shaped column (`uuid`, `team_id`, `claim_id`, etc.) is indexed.
-- `land_claims` bounding-box columns are indexed together to support the intersection query pattern in `LandClaimRepository#findIntersecting` — application code narrows candidates via the box index, then does precise checks in Java rather than relying on full spatial SQL, which isn't portable across SQLite/MySQL without extensions.
-- Avoid indexing low-cardinality columns alone (e.g., don't index `flag_key` by itself on a small table) — index only where query patterns in the actual repository code justify it.
+- Every foreign-key-shaped column (`uuid`, etc.) is indexed.
+- `valor_scores` is indexed on `(season, score)` to support the leaderboard query pattern (top scores within the current season).
+- Avoid indexing low-cardinality columns alone — index only where query patterns in the actual repository code justify it.
 
 ## 6. Backup Expectations
 
@@ -144,7 +76,6 @@ Operationally (not code-enforced): nightly backup of the database file (SQLite) 
 | Version | Description | Type |
 |---|---|---|
 | `V1__init_player_profiles.sql` | Creates `player_profiles` | Additive |
-| `V2__init_wallets.sql` | Creates `wallets` | Additive |
-| `V3__init_valor_scores.sql` | Creates `valor_scores` | Additive |
+| `V2__init_valor_scores.sql` | Creates `valor_scores` | Additive |
 
 New entries are appended here in the same PR as the migration file itself.

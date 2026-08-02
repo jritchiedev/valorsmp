@@ -29,7 +29,7 @@ class SqlDialectTest {
 
     @Test
     void translate_createTableIfNotExists_mysqlKeepsSupportedClause() {
-        String statement = "CREATE TABLE IF NOT EXISTS wallets (uuid CHAR(36) NOT NULL, PRIMARY KEY (uuid))";
+        String statement = "CREATE TABLE IF NOT EXISTS valor_scores (uuid CHAR(36) NOT NULL, PRIMARY KEY (uuid))";
 
         assertThat(SqlDialect.MYSQL.translate(statement)).isEqualTo(statement);
     }

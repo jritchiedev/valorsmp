@@ -43,7 +43,7 @@ class SqlMigrationRunnerTest {
         List<String> applied = newRunner().migrate(SqlMigrationRunner.DEFAULT_MIGRATIONS);
 
         assertThat(applied).isEqualTo(SqlMigrationRunner.DEFAULT_MIGRATIONS);
-        assertThat(tableNames()).contains("player_profiles", "wallets", "valor_scores", "schema_history");
+        assertThat(tableNames()).contains("player_profiles", "valor_scores", "schema_history");
     }
 
     @Test
@@ -58,22 +58,22 @@ class SqlMigrationRunnerTest {
         newRunner().migrate(List.of("V1__init_player_profiles.sql"));
 
         assertThat(newRunner().migrate(SqlMigrationRunner.DEFAULT_MIGRATIONS))
-                .containsExactly("V2__init_wallets.sql", "V3__init_valor_scores.sql");
+                .containsExactly("V2__init_valor_scores.sql");
     }
 
     @Test
-    void migrate_appliedSchemaSupportsWalletRoundTrip() throws SQLException {
+    void migrate_appliedSchemaSupportsValorScoreRoundTrip() throws SQLException {
         newRunner().migrate(SqlMigrationRunner.DEFAULT_MIGRATIONS);
 
         try (Statement statement = connection.createStatement()) {
             statement.executeUpdate(
-                    "INSERT INTO wallets (uuid, balance_minor_units, updated_at) "
-                            + "VALUES ('00000000-0000-0000-0000-000000000001', 250, CURRENT_TIMESTAMP)");
+                    "INSERT INTO valor_scores (uuid, season, score, updated_at) "
+                            + "VALUES ('00000000-0000-0000-0000-000000000001', 1, 12, CURRENT_TIMESTAMP)");
             try (ResultSet rows = statement.executeQuery(
-                    "SELECT balance_minor_units FROM wallets "
-                            + "WHERE uuid = '00000000-0000-0000-0000-000000000001'")) {
+                    "SELECT score FROM valor_scores "
+                            + "WHERE uuid = '00000000-0000-0000-0000-000000000001' AND season = 1")) {
                 assertThat(rows.next()).isTrue();
-                assertThat(rows.getLong(1)).isEqualTo(250L);
+                assertThat(rows.getLong(1)).isEqualTo(12L);
             }
         }
     }

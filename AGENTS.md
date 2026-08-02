@@ -55,7 +55,6 @@ valor-smp/
 │   ├── valor-system.md
 │   ├── combat.md
 │   ├── progression.md
-│   ├── economy.md
 │   └── future-features.md
 ├── src/
 │   ├── main/java/net/thevalorsmp/
@@ -192,8 +191,8 @@ See `TESTING.md` for full detail. Minimum bar for any PR:
 
 **Branch naming:**
 ```
-feature/<ticket-id>-<short-slug>       e.g. feature/VAL-142-land-claim-flags
-fix/<ticket-id>-<short-slug>           e.g. fix/VAL-201-duplicate-crate-drop
+feature/<ticket-id>-<short-slug>       e.g. feature/VAL-142-valor-kill-award
+fix/<ticket-id>-<short-slug>           e.g. fix/VAL-201-duplicate-kill-award
 refactor/<ticket-id>-<short-slug>
 chore/<short-slug>
 docs/<short-slug>
@@ -208,7 +207,7 @@ docs/<short-slug>
 Refs: VAL-142
 ```
 Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `perf`, `security`.
-Scope: the top-level package touched, e.g. `combat`, `economy`, `land-claims`, `core`.
+Scope: the top-level package touched, e.g. `combat`, `progression`, `seasons`, `core`.
 
 **PR conventions:**
 - Title mirrors the primary commit's summary line.
@@ -222,10 +221,10 @@ Scope: the top-level package touched, e.g. `combat`, `economy`, `land-claims`, `
 ## 11. When to Ask for Clarification — and When NOT To
 
 **Ask a human when:**
-- The request is ambiguous about player-facing behavior in a way that materially changes the design (e.g., "should land claims be transferable?" when nothing in `docs/` addresses it).
+- The request is ambiguous about player-facing behavior in a way that materially changes the design (e.g., "should Valor be lost on a non-PvP death?" when nothing in `docs/` addresses it).
 - The request conflicts with an existing `DECISIONS.md` entry.
 - The request would require a breaking data migration on a live production database, and no rollback plan is obvious.
-- The request touches `SECURITY.md`-classified areas (permissions, economy balances, admin commands) and the exact intended access level isn't specified.
+- The request touches `SECURITY.md`-classified areas (permissions, Valor scores, admin commands) and the exact intended access level isn't specified.
 - Two reasonable designs exist with materially different long-term maintenance cost, and the ticket doesn't indicate a preference.
 
 **Do NOT ask, just proceed, when:**
@@ -240,9 +239,9 @@ Default bias: **state an assumption and proceed**, rather than stall a ticket. B
 
 ## 12. Risk Management
 
-For any change touching money (economy), permissions, or persistent player data:
+For any change touching Valor scores, permissions, or persistent player data:
 
-- Identify the worst-case failure mode explicitly in the plan (e.g., "a bug here could duplicate currency" or "a bug here could grant admin-tier permissions").
+- Identify the worst-case failure mode explicitly in the plan (e.g., "a bug here could duplicate Valor" or "a bug here could grant admin-tier permissions").
 - Add a test specifically targeting that failure mode, not just the happy path.
 - Prefer additive, backward-compatible database migrations. Destructive migrations require a `DECISIONS.md` entry and a documented rollback path in `DATABASE.md`.
 - Feature-flag risky new systems behind a config toggle defaulting to `false` where feasible, so operators can disable without a redeploy.

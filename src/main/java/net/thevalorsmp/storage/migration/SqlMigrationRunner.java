@@ -29,8 +29,7 @@ public final class SqlMigrationRunner {
     /** Migrations shipped with the plugin, in application order (DATABASE.md section 7). */
     public static final List<String> DEFAULT_MIGRATIONS = List.of(
             "V1__init_player_profiles.sql",
-            "V2__init_wallets.sql",
-            "V3__init_valor_scores.sql");
+            "V2__init_valor_scores.sql");
 
     private static final String MIGRATION_RESOURCE_PREFIX = "db/migration/";
 
