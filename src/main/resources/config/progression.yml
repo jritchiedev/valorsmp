@@ -6,3 +6,8 @@ progression:
   tier-thresholds: [0, 5, 9, 13, 17]
   # Whether Valor II+ extends potion effect durations.
   extended-potion-effects: true
+  # Source potion duration (ticks) -> extended duration (ticks) for Valor II+ players.
+  # 9600 = 8:00 -> 12000 = 10:00; 1800 = 1:30 -> 3600 = 3:00 (docs/progression.md).
+  potion-duration-extensions:
+    "9600": 12000
+    "1800": 3600

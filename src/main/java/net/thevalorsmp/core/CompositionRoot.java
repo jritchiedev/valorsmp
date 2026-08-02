@@ -20,6 +20,7 @@ import net.thevalorsmp.profile.listener.PlayerProfileListener;
 import net.thevalorsmp.profile.repository.SqlPlayerProfileRepository;
 import net.thevalorsmp.profile.service.PlayerProfileService;
 import net.thevalorsmp.progression.command.SpeedCommand;
+import net.thevalorsmp.progression.listener.ExtendedPotionListener;
 import net.thevalorsmp.progression.listener.ValorPerkListener;
 import net.thevalorsmp.progression.perk.SpeedPreferenceManager;
 import net.thevalorsmp.progression.perk.TierPerkService;
@@ -83,6 +84,8 @@ public final class CompositionRoot {
 
         pluginManager.registerEvents(new PlayerProfileListener(profileService), plugin);
         pluginManager.registerEvents(new ValorPerkListener(valorScoreService, perkService, speedPreferences), plugin);
+        pluginManager.registerEvents(
+                new ExtendedPotionListener(valorScoreService, configService.progression()), plugin);
         pluginManager.registerEvents(new CombatListener(combatService), plugin);
         pluginManager.registerEvents(new MaceListener(cooldowns, combatConfig), plugin);
         pluginManager.registerEvents(new SpearListener(spearItems, cooldowns, combatConfig), plugin);

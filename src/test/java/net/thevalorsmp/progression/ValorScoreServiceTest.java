@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import net.thevalorsmp.config.ProgressionConfig;
 import net.thevalorsmp.progression.events.ValorRankChangedEvent;
@@ -16,7 +17,8 @@ import org.slf4j.helpers.NOPLogger;
 
 class ValorScoreServiceTest {
 
-    private static final ProgressionConfig CONFIG = new ProgressionConfig(1, List.of(0, 5, 9, 13, 17), true);
+    private static final ProgressionConfig CONFIG =
+            new ProgressionConfig(1, List.of(0, 5, 9, 13, 17), true, Map.of());
 
     private InMemoryValorScoreRepository repository;
     private RecordingDomainEventPublisher events;

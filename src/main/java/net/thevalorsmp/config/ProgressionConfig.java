@@ -1,6 +1,8 @@
 package net.thevalorsmp.config;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
@@ -10,25 +12,32 @@ import org.slf4j.Logger;
  * Typed view of {@code config/progression.yml} (CONFIGURATION.md section 3, docs/progression.md).
  * Hot-reloadable: only tunable constants, no live resources.
  *
- * @param currentSeason         season Valor scores are currently keyed by
- * @param tierThresholds        minimum Valor Points for tiers I..V, ascending and non-negative
- * @param extendedPotionEffects whether Valor II+ extends potion effect durations
+ * @param currentSeason             season Valor scores are currently keyed by
+ * @param tierThresholds            minimum Valor Points for tiers I..V, ascending and non-negative
+ * @param extendedPotionEffects     whether Valor II+ extends potion effect durations
+ * @param potionDurationExtensions  mapping of source potion duration (ticks) to extended duration
+ *                                  (ticks), applied for Valor II+ players
  */
 public record ProgressionConfig(
         int currentSeason,
         @NotNull List<Integer> tierThresholds,
-        boolean extendedPotionEffects) {
+        boolean extendedPotionEffects,
+        @NotNull Map<Integer, Integer> potionDurationExtensions) {
 
     /** Number of Valor tiers (I..V). */
     public static final int TIER_COUNT = 5;
 
     private static final List<Integer> DEFAULT_THRESHOLDS = List.of(0, 5, 9, 13, 17);
+    // 8:00 (9600t) -> 10:00 (12000t) and 1:30 (1800t) -> 3:00 (3600t), per docs/progression.md.
+    private static final Map<Integer, Integer> DEFAULT_POTION_EXTENSIONS = Map.of(9600, 12000, 1800, 3600);
     private static final int DEFAULT_SEASON = 1;
 
-    /** Validates record invariants and defensively copies the thresholds. */
+    /** Validates record invariants and defensively copies collections. */
     public ProgressionConfig {
         Objects.requireNonNull(tierThresholds, "tierThresholds");
+        Objects.requireNonNull(potionDurationExtensions, "potionDurationExtensions");
         tierThresholds = List.copyOf(tierThresholds);
+        potionDurationExtensions = Map.copyOf(potionDurationExtensions);
         if (currentSeason < 1) {
             throw new IllegalArgumentException("currentSeason must be at least 1");
         }
@@ -44,6 +53,11 @@ public record ProgressionConfig(
                 throw new IllegalArgumentException("tierThresholds must be strictly ascending");
             }
             previous = threshold;
+        }
+        for (Map.Entry<Integer, Integer> entry : potionDurationExtensions.entrySet()) {
+            if (entry.getKey() <= 0 || entry.getValue() <= 0) {
+                throw new IllegalArgumentException("potionDurationExtensions durations must be positive");
+            }
         }
     }
 
@@ -73,7 +87,32 @@ public record ProgressionConfig(
         }
 
         boolean extended = section.getBoolean("extended-potion-effects", true);
-        return new ProgressionConfig(season, thresholds, extended);
+        Map<Integer, Integer> extensions =
+                loadExtensions(section.getConfigurationSection("potion-duration-extensions"), logger);
+        return new ProgressionConfig(season, thresholds, extended, extensions);
+    }
+
+    private static Map<Integer, Integer> loadExtensions(ConfigurationSection section, Logger logger) {
+        if (section == null) {
+            return DEFAULT_POTION_EXTENSIONS;
+        }
+        Map<Integer, Integer> result = new HashMap<>();
+        for (String key : section.getKeys(false)) {
+            int source;
+            try {
+                source = Integer.parseInt(key);
+            } catch (NumberFormatException e) {
+                logger.warn("progression.potion-duration-extensions key '{}' is not an integer; ignoring.", key);
+                continue;
+            }
+            int target = section.getInt(key);
+            if (source > 0 && target > 0) {
+                result.put(source, target);
+            } else {
+                logger.warn("progression.potion-duration-extensions.{} must map positive->positive; ignoring.", key);
+            }
+        }
+        return result.isEmpty() ? DEFAULT_POTION_EXTENSIONS : Map.copyOf(result);
     }
 
     private static boolean isValidThresholds(List<Integer> thresholds) {
