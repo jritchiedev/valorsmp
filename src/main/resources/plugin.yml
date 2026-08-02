@@ -21,10 +21,17 @@ commands:
     description: Valor SMP operator diagnostics.
     usage: /valorsmp <health|version|reload>
     permission: valorsmp.admin
+  valorspear:
+    description: Grant a custom Valor spear (operator tool).
+    usage: /valorspear <tier> [player]
+    permission: valorsmp.spear.give
 permissions:
   valorsmp.speed.use:
     description: Allows using /speed. Actual effect is gated further by the player's Valor tier.
     default: true
   valorsmp.admin:
     description: Valor SMP operator commands.
+    default: op
+  valorsmp.spear.give:
+    description: Allows granting Valor spears via /valorspear.
     default: op
