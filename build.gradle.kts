@@ -17,7 +17,7 @@ repositories {
     maven("https://repo.papermc.io/repository/maven-public/")
 }
 
-val paperApiVersion = "1.21.4-R0.1-SNAPSHOT"
+val paperApiVersion = "1.21.11-R0.1-SNAPSHOT"
 val hikariVersion = "6.2.1"
 val sqliteVersion = "3.49.1.0"
 // MariaDB Connector/J speaks the MySQL protocol and is LGPL, unlike GPL mysql-connector-j (ADR-005).
@@ -49,12 +49,13 @@ dependencies {
 
     testImplementation("io.papermc.paper:paper-api:$paperApiVersion")
     testImplementation("org.jetbrains:annotations:26.0.2")
-    testImplementation(platform("org.junit:junit-bom:5.11.4"))
+    testImplementation(platform("org.junit:junit-bom:6.0.3"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("org.assertj:assertj-core:3.27.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
-    integrationTestImplementation("org.mockbukkit.mockbukkit:mockbukkit-v1.21:4.35.0")
+    // MockBukkit 4.110.x targets the latest 1.21.x (matching paper-api above) and requires JUnit 6.
+    integrationTestImplementation("org.mockbukkit.mockbukkit:mockbukkit-v1.21:4.110.0")
 }
 
 checkstyle {

@@ -1,0 +1,8 @@
+# Valor progression (docs/progression.md, docs/valor-system.md).
+progression:
+  # Current season; Valor scores are keyed by (uuid, season). Bump at a season reset.
+  current-season: 1
+  # Minimum Valor Points required to reach each tier I..V. Must be 5 ascending, non-negative values.
+  tier-thresholds: [0, 5, 9, 13, 17]
+  # Whether Valor II+ extends potion effect durations.
+  extended-potion-effects: true

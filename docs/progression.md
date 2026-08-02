@@ -14,10 +14,9 @@ Every 4 Valor Points unlocks a new tier. The maximum tier is 5. Perks are cumula
 | Valor II | 5–8 | Extended potion effects — effects that are 8 minutes long become 10 minutes; effects that are 1 min 30 sec become 3 minutes. |
 | Valor III | 9–12 | Permanent Speed I. (`/effect give <player> minecraft:speed infinite`) |
 | Valor IV | 13–16 | Permanent Strength I and Speed II. (`/effect give <player> minecraft:speed infinite 1`, `/effect give <player> minecraft:strength infinite`) |
-| Valor V | 16–20 | Permanent Strength II and Speed II. (`/effect give <player> minecraft:speed infinite 1`, `/effect give <player> minecraft:strength infinite 1`) |
+| Valor V | 17–20 | Permanent Strength II and Speed II. (`/effect give <player> minecraft:speed infinite 1`, `/effect give <player> minecraft:strength infinite 1`) |
 
 - Valor IV and V players may switch their permanent Speed effect between Speed I and Speed II with `/speed set 1|2`.
-- **Note:** the source spec lists Valor IV as `13–16` and Valor V as `16–20`, so point 16 appears in both. Confirm the intended boundary (likely Valor V = `17–20`) before finalizing config thresholds.
 
 ## 2. Tier Computation
 

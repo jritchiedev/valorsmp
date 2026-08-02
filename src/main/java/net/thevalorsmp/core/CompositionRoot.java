@@ -2,7 +2,25 @@ package net.thevalorsmp.core;
 
 import java.util.Objects;
 import javax.sql.DataSource;
+import net.thevalorsmp.combat.listener.CombatListener;
+import net.thevalorsmp.combat.service.CombatService;
 import net.thevalorsmp.config.ConfigService;
+import net.thevalorsmp.core.command.AdminCommand;
+import net.thevalorsmp.core.event.BukkitDomainEventPublisher;
+import net.thevalorsmp.core.event.DomainEventPublisher;
+import net.thevalorsmp.profile.listener.PlayerProfileListener;
+import net.thevalorsmp.profile.repository.SqlPlayerProfileRepository;
+import net.thevalorsmp.profile.service.PlayerProfileService;
+import net.thevalorsmp.progression.command.SpeedCommand;
+import net.thevalorsmp.progression.listener.ValorPerkListener;
+import net.thevalorsmp.progression.perk.SpeedPreferenceManager;
+import net.thevalorsmp.progression.perk.TierPerkService;
+import net.thevalorsmp.progression.repository.SqlValorScoreRepository;
+import net.thevalorsmp.progression.repository.ValorScoreRepository;
+import net.thevalorsmp.progression.service.ValorScoreService;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.plugin.PluginManager;
 
 /**
  * The single place where production object graphs are constructed (ARCHITECTURE.md section 3).
@@ -34,14 +52,37 @@ public final class CompositionRoot {
      * @return the registry of long-lived services owned by this plugin instance
      */
     public ServiceRegistry build() {
-        // Feature repositories, services, listeners, and commands are wired here as features land.
-        // Kept intentionally empty in the scaffold so the first feature PR has an obvious, single home.
+        PluginManager pluginManager = plugin.getServer().getPluginManager();
+        DomainEventPublisher eventPublisher = new BukkitDomainEventPublisher(plugin.getServer());
+
+        PlayerProfileService profileService =
+                new PlayerProfileService(new SqlPlayerProfileRepository(dataSource));
+
+        ValorScoreRepository valorScoreRepository = new SqlValorScoreRepository(dataSource);
+        ValorScoreService valorScoreService = new ValorScoreService(
+                valorScoreRepository, configService.progression(), eventPublisher, plugin.getSLF4JLogger());
+
+        SpeedPreferenceManager speedPreferences = new SpeedPreferenceManager();
+        TierPerkService perkService = new TierPerkService(speedPreferences);
+        CombatService combatService = new CombatService(valorScoreService, eventPublisher);
+
+        pluginManager.registerEvents(new PlayerProfileListener(profileService), plugin);
+        pluginManager.registerEvents(new ValorPerkListener(valorScoreService, perkService, speedPreferences), plugin);
+        pluginManager.registerEvents(new CombatListener(combatService), plugin);
+
+        registerCommand("speed", new SpeedCommand(valorScoreService, perkService, speedPreferences));
+        registerCommand("valorsmp", new AdminCommand(plugin, configService));
+
         plugin.getSLF4JLogger().debug(
                 "Composition root built with storage backend {}.", configService.database().backend());
         return new ServiceRegistry();
     }
 
-    DataSource dataSource() {
-        return dataSource;
+    private void registerCommand(String name, CommandExecutor executor) {
+        PluginCommand command = plugin.getCommand(name);
+        if (command == null) {
+            throw new IllegalStateException("Command '" + name + "' is not declared in plugin.yml");
+        }
+        command.setExecutor(executor);
     }
 }
