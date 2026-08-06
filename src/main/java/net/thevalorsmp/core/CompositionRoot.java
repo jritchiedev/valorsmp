@@ -20,6 +20,7 @@ import net.thevalorsmp.profile.listener.PlayerProfileListener;
 import net.thevalorsmp.profile.repository.SqlPlayerProfileRepository;
 import net.thevalorsmp.profile.service.PlayerProfileService;
 import net.thevalorsmp.progression.command.SpeedCommand;
+import net.thevalorsmp.progression.command.ValorCommand;
 import net.thevalorsmp.progression.listener.ExtendedPotionListener;
 import net.thevalorsmp.progression.listener.ValorPerkListener;
 import net.thevalorsmp.progression.perk.SpeedPreferenceManager;
@@ -93,6 +94,7 @@ public final class CompositionRoot {
         plugin.getServer().getScheduler()
                 .runTaskTimer(plugin, dragonEgg, DRAGON_EGG_TICK_PERIOD, DRAGON_EGG_TICK_PERIOD);
 
+        registerCommand("valor", new ValorCommand(valorScoreService));
         registerCommand("speed", new SpeedCommand(valorScoreService, perkService, speedPreferences));
         registerCommand("valorsmp", new AdminCommand(plugin, configService));
         registerCommand("valorspear", new SpearCommand(spearItems));

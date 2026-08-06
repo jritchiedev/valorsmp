@@ -13,6 +13,10 @@ libraries:
   - org.xerial:sqlite-jdbc:${sqliteVersion}
   - org.mariadb.jdbc:mariadb-java-client:${mariadbVersion}
 commands:
+  valor:
+    description: Show your current Valor score and tier.
+    usage: /valor
+    permission: valorsmp.valor.view
   speed:
     description: Switch your permanent Valor speed between Speed I and II (Valor IV+).
     usage: /speed set <1|2>
@@ -26,6 +30,9 @@ commands:
     usage: /valorspear <tier> [player]
     permission: valorsmp.spear.give
 permissions:
+  valorsmp.valor.view:
+    description: Allows using /valor to view your own Valor score.
+    default: true
   valorsmp.speed.use:
     description: Allows using /speed. Actual effect is gated further by the player's Valor tier.
     default: true
