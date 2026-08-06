@@ -1,9 +1,17 @@
 package net.thevalorsmp.core;
 
+import java.time.Clock;
 import java.util.Objects;
 import javax.sql.DataSource;
+import net.thevalorsmp.combat.command.SpearCommand;
+import net.thevalorsmp.combat.cooldown.AbilityCooldownManager;
+import net.thevalorsmp.combat.dragonegg.DragonEggController;
+import net.thevalorsmp.combat.item.SpearItemService;
 import net.thevalorsmp.combat.listener.CombatListener;
+import net.thevalorsmp.combat.listener.MaceListener;
+import net.thevalorsmp.combat.listener.SpearListener;
 import net.thevalorsmp.combat.service.CombatService;
+import net.thevalorsmp.config.CombatConfig;
 import net.thevalorsmp.config.ConfigService;
 import net.thevalorsmp.core.command.AdminCommand;
 import net.thevalorsmp.core.event.BukkitDomainEventPublisher;
@@ -12,6 +20,8 @@ import net.thevalorsmp.profile.listener.PlayerProfileListener;
 import net.thevalorsmp.profile.repository.SqlPlayerProfileRepository;
 import net.thevalorsmp.profile.service.PlayerProfileService;
 import net.thevalorsmp.progression.command.SpeedCommand;
+import net.thevalorsmp.progression.command.ValorCommand;
+import net.thevalorsmp.progression.listener.ExtendedPotionListener;
 import net.thevalorsmp.progression.listener.ValorPerkListener;
 import net.thevalorsmp.progression.perk.SpeedPreferenceManager;
 import net.thevalorsmp.progression.perk.TierPerkService;
@@ -28,6 +38,8 @@ import org.bukkit.plugin.PluginManager;
  * class instantiates a concrete repository or service implementation.
  */
 public final class CompositionRoot {
+
+    private static final long DRAGON_EGG_TICK_PERIOD = 20L;
 
     private final ValorPlugin plugin;
     private final ConfigService configService;
@@ -54,6 +66,7 @@ public final class CompositionRoot {
     public ServiceRegistry build() {
         PluginManager pluginManager = plugin.getServer().getPluginManager();
         DomainEventPublisher eventPublisher = new BukkitDomainEventPublisher(plugin.getServer());
+        CombatConfig combatConfig = configService.combat();
 
         PlayerProfileService profileService =
                 new PlayerProfileService(new SqlPlayerProfileRepository(dataSource));
@@ -63,15 +76,28 @@ public final class CompositionRoot {
                 valorScoreRepository, configService.progression(), eventPublisher, plugin.getSLF4JLogger());
 
         SpeedPreferenceManager speedPreferences = new SpeedPreferenceManager();
-        TierPerkService perkService = new TierPerkService(speedPreferences);
+        TierPerkService perkService = new TierPerkService(speedPreferences, combatConfig);
         CombatService combatService = new CombatService(valorScoreService, eventPublisher);
+
+        AbilityCooldownManager cooldowns = new AbilityCooldownManager(Clock.systemUTC());
+        SpearItemService spearItems = new SpearItemService(plugin);
+        DragonEggController dragonEgg = new DragonEggController(valorScoreService, perkService);
 
         pluginManager.registerEvents(new PlayerProfileListener(profileService), plugin);
         pluginManager.registerEvents(new ValorPerkListener(valorScoreService, perkService, speedPreferences), plugin);
+        pluginManager.registerEvents(
+                new ExtendedPotionListener(valorScoreService, configService.progression()), plugin);
         pluginManager.registerEvents(new CombatListener(combatService), plugin);
+        pluginManager.registerEvents(new MaceListener(cooldowns, combatConfig), plugin);
+        pluginManager.registerEvents(new SpearListener(spearItems, cooldowns, combatConfig), plugin);
+        pluginManager.registerEvents(dragonEgg, plugin);
+        plugin.getServer().getScheduler()
+                .runTaskTimer(plugin, dragonEgg, DRAGON_EGG_TICK_PERIOD, DRAGON_EGG_TICK_PERIOD);
 
+        registerCommand("valor", new ValorCommand(valorScoreService));
         registerCommand("speed", new SpeedCommand(valorScoreService, perkService, speedPreferences));
         registerCommand("valorsmp", new AdminCommand(plugin, configService));
+        registerCommand("valorspear", new SpearCommand(spearItems));
 
         plugin.getSLF4JLogger().debug(
                 "Composition root built with storage backend {}.", configService.database().backend());
