@@ -18,7 +18,11 @@ export default function RootLayout() {
   useEffect(() => {
     getDatabase()
       .then(() => setReady(true))
-      .then(() => SplashScreen.hideAsync());
+      .catch((error) => {
+        console.error('Database initialization failed', error);
+        setReady(true);
+      })
+      .finally(() => SplashScreen.hideAsync());
   }, []);
 
   if (!ready) {
