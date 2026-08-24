@@ -53,7 +53,7 @@ export default function RootLayout() {
         />
         <Stack.Screen
           name="fluency/review"
-          options={{ title: 'Review' }}
+          options={{ title: 'Review', headerBackTitle: '' }}
         />
         <Stack.Screen
           name="fluency/results"
@@ -61,15 +61,15 @@ export default function RootLayout() {
         />
         <Stack.Screen
           name="students/[id]"
-          options={{ title: '' }}
+          options={{ title: '', headerBackTitle: '' }}
         />
         <Stack.Screen
           name="passages/manage"
-          options={{ title: 'Passages' }}
+          options={{ title: 'Passages', headerBackTitle: '' }}
         />
         <Stack.Screen
           name="privacy"
-          options={{ title: 'Privacy' }}
+          options={{ title: 'Privacy', headerBackTitle: '' }}
         />
       </Stack>
     </>
