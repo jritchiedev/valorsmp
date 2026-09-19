@@ -41,12 +41,13 @@ database is needed. Config is generated on first run under `plugins/TheValorSMP/
 | IV | 13–16 | permanent Strength I + Speed II, `/speed set 1\|2` |
 | V | 17–20 | permanent Strength II + Speed II, `/speed set 1\|2` |
 
-Perks apply on join, respawn, and when your tier changes.
+Perks apply on join, after respawn, and when your tier changes.
 
 ### Custom items (all vanilla items; no operator grant command)
 - **Mace:** 60-second attack cooldown, shown in the hotbar; cannot be enchanted at a table or anvil.
-- **Spear + Lunge:** using a vanilla spear enchanted with Lunge puts it on a 30-second vanilla item
-  cooldown (hotbar-visible, blocks re-use); unenchanted spears are unaffected.
+- **Spear + Lunge:** every jab (left-click) with a vanilla spear enchanted with Lunge puts it on a
+  30-second vanilla item cooldown (hotbar-visible); a lunge attempted while on cooldown costs no
+  hunger and the dash is cancelled server-side. The right-click charge attack is unaffected.
 - **Dragon egg:** grants Strength III while it's in your inventory; **cannot** be placed in an
   ender chest.
 

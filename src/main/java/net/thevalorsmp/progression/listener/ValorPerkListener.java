@@ -1,5 +1,6 @@
 package net.thevalorsmp.progression.listener;
 
+import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent;
 import java.util.Objects;
 import net.thevalorsmp.progression.events.ValorRankChangedEvent;
 import net.thevalorsmp.progression.perk.SpeedPreferenceManager;
@@ -11,7 +12,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.player.PlayerRespawnEvent;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -52,12 +52,13 @@ public final class ValorPerkListener implements Listener {
     }
 
     /**
-     * Reapplies perks after respawn, since death clears potion effects.
+     * Reapplies perks after respawn, since death clears potion effects. Uses the post-respawn
+     * event, which fires after the server has finished resetting the respawned player's effects.
      *
-     * @param event the respawn event
+     * @param event the post-respawn event
      */
     @EventHandler
-    public void onPlayerRespawn(@NotNull PlayerRespawnEvent event) {
+    public void onPlayerPostRespawn(@NotNull PlayerPostRespawnEvent event) {
         Player player = event.getPlayer();
         perkService.applyPerks(player, valorScoreService.currentTier(player.getUniqueId()));
     }
