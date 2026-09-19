@@ -19,13 +19,16 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Enforces the mace rules (docs/combat.md): a configurable attack cooldown (default 30s) and a ban
- * on enchanting the mace via an enchantment table or an anvil.
+ * Enforces the mace rules (docs/combat.md): a configurable attack cooldown (default 60s), shown in
+ * the hotbar via the vanilla item cooldown overlay, and a ban on enchanting the mace via an
+ * enchantment table or an anvil.
  */
 public final class MaceListener implements Listener {
 
     /** Ability key used with {@link AbilityCooldownManager}. */
     public static final String MACE_ABILITY = "mace";
+
+    private static final int TICKS_PER_SECOND = 20;
 
     private final AbilityCooldownManager cooldowns;
     private final int cooldownSeconds;
@@ -62,6 +65,7 @@ public final class MaceListener implements Listener {
             return;
         }
         cooldowns.start(id, MACE_ABILITY, Duration.ofSeconds(cooldownSeconds));
+        player.setCooldown(Material.MACE, cooldownSeconds * TICKS_PER_SECOND);
     }
 
     /**

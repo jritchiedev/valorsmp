@@ -1,8 +1,7 @@
 # Valor SMP — Alpha Setup & Tester Guide (v0.01)
 
 How to stand up the alpha server and what to test. This is an early alpha: the core Valor
-loop, tiers/perks, and custom item mechanics are in; visuals (spear resource pack) and some
-extras are not yet.
+loop, tiers/perks, and custom item mechanics are in; some extras are not yet.
 
 ---
 
@@ -44,18 +43,16 @@ database is needed. Config is generated on first run under `plugins/TheValorSMP/
 
 Perks apply on join, respawn, and when your tier changes.
 
-### Custom items (operator grants with `/valorspear <tier>`; mace/dragon egg are vanilla items)
-- **Mace:** 30-second attack cooldown; cannot be enchanted at a table or anvil.
-- **Spear + lunge:** right-click to dash forward, 10-second cooldown. (Looks like a sword until the
-  resource pack lands.)
+### Custom items (all vanilla items; no operator grant command)
+- **Mace:** 60-second attack cooldown, shown in the hotbar; cannot be enchanted at a table or anvil.
+- **Spear + Lunge:** using a vanilla spear enchanted with Lunge puts it on a 30-second vanilla item
+  cooldown (hotbar-visible, blocks re-use); unenchanted spears are unaffected.
 - **Dragon egg:** grants Strength III while it's in your inventory; **cannot** be placed in an
   ender chest.
 
 ## Operator commands
 - `/valorsmp health|version` — diagnostics (permission `valorsmp.admin`).
-- `/valorspear <tier> [player]` — grant a spear (permission `valorsmp.spear.give`).
 
 ## Known limitations (this alpha)
-- Spears have no custom model yet (resource pack pending) — they render as their base sword.
 - "String Duper Returns" (a Fabric mod) is not included; there is no Paper equivalent.
 - Config is applied at startup; there is no hot reload yet (restart to change config).

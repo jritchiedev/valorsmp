@@ -22,6 +22,11 @@ There is **no combat tagging** on the server. Players are never "tagged" for eng
 - On a PvP death: `PlayerKilledEvent` fires (`EVENTS.md`), consumed by `ValorScoreService` (score award/deduction) and `LeaderboardService` (stat update).
 - Item/inventory drop behavior on PvP death is **drop everything**.
 
-## 5. Open Questions
+## 5. Item Cooldowns
+
+- **Mace:** 60-second server-enforced attack cooldown (`combat.mace-cooldown-seconds`), also shown via the vanilla hotbar cooldown overlay; maces cannot be enchanted at a table or anvil.
+- **Spears:** vanilla spear items (`Tag.ITEMS_SPEARS`) only — there is no custom spear item or `/valorspear` command. Using a spear enchanted with vanilla **Lunge** applies a 30-second vanilla item cooldown (`combat.spear-lunge-cooldown-seconds`), visible in the hotbar and blocking re-use. Unenchanted spears are unaffected.
+
+## 6. Open Questions
 
 - None currently; the +1/-1 Valor model is fixed by the source spec.

@@ -6,7 +6,7 @@ The mechanical implementation of the Valor tier ladder: thresholds, display, and
 
 ## 1. Tier Ladder
 
-Every 4 Valor Points unlocks a new tier. The maximum tier is 5. Perks are cumulative in effect as described per tier.
+Every 4 Valor Points unlocks a new tier. The maximum tier is 5. Scores are capped at `max-valor` (default 20) so Valor V is the ceiling. Perks are cumulative in effect as described per tier.
 
 | Tier | Valor Points | Perks |
 |---|---|---|

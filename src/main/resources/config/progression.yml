@@ -4,6 +4,8 @@ progression:
   current-season: 1
   # Minimum Valor Points required to reach each tier I..V. Must be 5 ascending, non-negative values.
   tier-thresholds: [0, 5, 9, 13, 17]
+  # Valor scores never exceed this value.
+  max-valor: 20
   # Whether Valor II+ extends potion effect durations.
   extended-potion-effects: true
   # Source potion duration (ticks) -> extended duration (ticks) for Valor II+ players.

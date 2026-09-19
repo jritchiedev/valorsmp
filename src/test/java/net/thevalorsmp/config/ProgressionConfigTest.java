@@ -42,6 +42,29 @@ class ProgressionConfigTest {
         assertThat(config.tierThresholds()).containsExactly(0, 5, 9, 13, 17);
     }
 
+    @Test
+    void load_maxValorUnset_defaultsTo20() {
+        assertThat(ProgressionConfig.load(emptySection(), NOPLogger.NOP_LOGGER).maxValor()).isEqualTo(20);
+    }
+
+    @Test
+    void load_maxValorBelowTopThreshold_fallsBackWithWarning() {
+        ConfigurationSection section = emptySection();
+        section.set("max-valor", 5); // below top threshold 17
+
+        ProgressionConfig config = ProgressionConfig.load(section, NOPLogger.NOP_LOGGER);
+
+        assertThat(config.maxValor()).isEqualTo(20);
+    }
+
+    @Test
+    void load_validMaxValor_accepted() {
+        ConfigurationSection section = emptySection();
+        section.set("max-valor", 50);
+
+        assertThat(ProgressionConfig.load(section, NOPLogger.NOP_LOGGER).maxValor()).isEqualTo(50);
+    }
+
     private static ConfigurationSection emptySection() {
         return new YamlConfiguration().createSection("progression");
     }

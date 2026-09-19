@@ -13,7 +13,8 @@ import org.slf4j.Logger;
 
 /**
  * The single, auditable path for Valor score mutation (SECURITY.md section 9). Valor can only be
- * gained by killing players and only lost by dying to players; scores are integers floored at 0.
+ * gained by killing players and only lost by dying to players; scores are integers floored at 0
+ * and capped at {@code max-valor}.
  * Fires {@link ValorRankChangedEvent} whenever a mutation changes a player's computed tier.
  */
 public final class ValorScoreService {
@@ -84,7 +85,7 @@ public final class ValorScoreService {
 
     private int mutate(UUID playerId, int season, int delta, String reason) {
         int before = repository.findScore(playerId, season);
-        int after = Math.max(0, before + delta);
+        int after = Math.min(config.maxValor(), Math.max(0, before + delta));
         if (after == before) {
             return after;
         }

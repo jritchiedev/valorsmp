@@ -1,8 +1,8 @@
 # Combat and custom item mechanics (docs/combat.md).
 combat:
   # Server-enforced cooldown for the mace, in seconds.
-  mace-cooldown-seconds: 30
+  mace-cooldown-seconds: 60
   # Server-enforced cooldown for the spear "lunge" enchant, in seconds.
-  spear-lunge-cooldown-seconds: 10
+  spear-lunge-cooldown-seconds: 30
   # Strength amplifier granted while a dragon egg is carried (2 = Strength III).
   dragon-egg-strength-amplifier: 2
