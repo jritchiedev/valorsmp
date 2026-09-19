@@ -18,8 +18,8 @@ public record CombatConfig(
         int spearLungeCooldownSeconds,
         int dragonEggStrengthAmplifier) {
 
-    private static final int DEFAULT_MACE_COOLDOWN = 30;
-    private static final int DEFAULT_LUNGE_COOLDOWN = 10;
+    private static final int DEFAULT_MACE_COOLDOWN = 60;
+    private static final int DEFAULT_LUNGE_COOLDOWN = 30;
     private static final int DEFAULT_DRAGON_EGG_AMPLIFIER = 2;
     private static final int MAX_AMPLIFIER = 255;
 

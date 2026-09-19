@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Runtime state (ARCHITECTURE.md section 2.4) tracking per-player, per-ability cooldown expiry for
- * custom item abilities (the mace attack, the spear lunge). A {@link Clock} is injected so cooldown
+ * custom item abilities (the mace attack). A {@link Clock} is injected so cooldown
  * logic is unit-testable without real time.
  */
 public final class AbilityCooldownManager {
@@ -31,7 +31,7 @@ public final class AbilityCooldownManager {
      * Whether the given ability is currently on cooldown for the player.
      *
      * @param playerId player UUID
-     * @param ability  ability key, e.g. {@code "mace"} or {@code "spear-lunge"}
+     * @param ability  ability key, e.g. {@code "mace"}
      * @return {@code true} if the cooldown has not yet elapsed
      */
     public boolean isOnCooldown(@NotNull UUID playerId, @NotNull String ability) {

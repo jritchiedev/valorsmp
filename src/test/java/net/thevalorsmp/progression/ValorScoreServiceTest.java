@@ -18,7 +18,7 @@ import org.slf4j.helpers.NOPLogger;
 class ValorScoreServiceTest {
 
     private static final ProgressionConfig CONFIG =
-            new ProgressionConfig(1, List.of(0, 5, 9, 13, 17), true, Map.of());
+            new ProgressionConfig(1, List.of(0, 5, 9, 13, 17), 20, true, Map.of());
 
     private InMemoryValorScoreRepository repository;
     private RecordingDomainEventPublisher events;
@@ -77,6 +77,28 @@ class ValorScoreServiceTest {
         service.awardKill(UUID.randomUUID(), UUID.randomUUID());
 
         assertThat(events.published()).isEmpty();
+    }
+
+    @Test
+    void awardKill_killerAtCap_staysAtCapWithoutSaveOrEvent() {
+        UUID killer = UUID.randomUUID();
+        repository.saveScore(killer, 1, 20);
+
+        ValorAwardResult result = service.awardKill(killer, UUID.randomUUID());
+
+        assertThat(result.killerScore()).isEqualTo(20);
+        assertThat(repository.saves()).isEqualTo(1); // the seeding save only
+        assertThat(events.published()).isEmpty();
+    }
+
+    @Test
+    void awardKill_killerBelowCap_clampsAtMaxValor() {
+        UUID killer = UUID.randomUUID();
+        repository.saveScore(killer, 1, 19);
+
+        ValorAwardResult result = service.awardKill(killer, UUID.randomUUID());
+
+        assertThat(result.killerScore()).isEqualTo(20);
     }
 
     @Test

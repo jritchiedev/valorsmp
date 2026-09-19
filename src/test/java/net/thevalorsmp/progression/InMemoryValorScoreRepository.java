@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 public final class InMemoryValorScoreRepository implements ValorScoreRepository {
 
     private final Map<String, Integer> scores = new HashMap<>();
+    private int saves;
 
     @Override
     public int findScore(@NotNull UUID playerId, int season) {
@@ -19,7 +20,13 @@ public final class InMemoryValorScoreRepository implements ValorScoreRepository 
 
     @Override
     public void saveScore(@NotNull UUID playerId, int season, int score) {
+        saves++;
         scores.put(key(playerId, season), score);
+    }
+
+    /** Number of {@code saveScore} calls observed. */
+    public int saves() {
+        return saves;
     }
 
     private static String key(UUID playerId, int season) {

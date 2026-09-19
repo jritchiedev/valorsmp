@@ -14,6 +14,8 @@ import org.slf4j.Logger;
  *
  * @param currentSeason             season Valor scores are currently keyed by
  * @param tierThresholds            minimum Valor Points for tiers I..V, ascending and non-negative
+ * @param maxValor                  maximum Valor score; mutations clamp at this value and it must be
+ *                                  at least the top tier threshold so Valor V stays reachable
  * @param extendedPotionEffects     whether Valor II+ extends potion effect durations
  * @param potionDurationExtensions  mapping of source potion duration (ticks) to extended duration
  *                                  (ticks), applied for Valor II+ players
@@ -21,6 +23,7 @@ import org.slf4j.Logger;
 public record ProgressionConfig(
         int currentSeason,
         @NotNull List<Integer> tierThresholds,
+        int maxValor,
         boolean extendedPotionEffects,
         @NotNull Map<Integer, Integer> potionDurationExtensions) {
 
@@ -28,6 +31,7 @@ public record ProgressionConfig(
     public static final int TIER_COUNT = 5;
 
     private static final List<Integer> DEFAULT_THRESHOLDS = List.of(0, 5, 9, 13, 17);
+    private static final int DEFAULT_MAX_VALOR = 20;
     // 8:00 (9600t) -> 10:00 (12000t) and 1:30 (1800t) -> 3:00 (3600t), per docs/progression.md.
     private static final Map<Integer, Integer> DEFAULT_POTION_EXTENSIONS = Map.of(9600, 12000, 1800, 3600);
     private static final int DEFAULT_SEASON = 1;
@@ -53,6 +57,9 @@ public record ProgressionConfig(
                 throw new IllegalArgumentException("tierThresholds must be strictly ascending");
             }
             previous = threshold;
+        }
+        if (maxValor < tierThresholds.get(TIER_COUNT - 1)) {
+            throw new IllegalArgumentException("maxValor must be at least the top tier threshold");
         }
         for (Map.Entry<Integer, Integer> entry : potionDurationExtensions.entrySet()) {
             if (entry.getKey() <= 0 || entry.getValue() <= 0) {
@@ -86,10 +93,20 @@ public record ProgressionConfig(
             thresholds = DEFAULT_THRESHOLDS;
         }
 
+        int maxValor = section.getInt("max-valor", DEFAULT_MAX_VALOR);
+        int topThreshold = thresholds.get(TIER_COUNT - 1);
+        if (maxValor < topThreshold) {
+            int fallback = Math.max(DEFAULT_MAX_VALOR, topThreshold);
+            logger.warn(
+                    "progression.max-valor must be at least the top tier threshold {} (was {}); using {}.",
+                    topThreshold, maxValor, fallback);
+            maxValor = fallback;
+        }
+
         boolean extended = section.getBoolean("extended-potion-effects", true);
         Map<Integer, Integer> extensions =
                 loadExtensions(section.getConfigurationSection("potion-duration-extensions"), logger);
-        return new ProgressionConfig(season, thresholds, extended, extensions);
+        return new ProgressionConfig(season, thresholds, maxValor, extended, extensions);
     }
 
     private static Map<Integer, Integer> loadExtensions(ConfigurationSection section, Logger logger) {

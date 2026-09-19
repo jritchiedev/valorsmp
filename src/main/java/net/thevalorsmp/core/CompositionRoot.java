@@ -3,10 +3,8 @@ package net.thevalorsmp.core;
 import java.time.Clock;
 import java.util.Objects;
 import javax.sql.DataSource;
-import net.thevalorsmp.combat.command.SpearCommand;
 import net.thevalorsmp.combat.cooldown.AbilityCooldownManager;
 import net.thevalorsmp.combat.dragonegg.DragonEggController;
-import net.thevalorsmp.combat.item.SpearItemService;
 import net.thevalorsmp.combat.listener.CombatListener;
 import net.thevalorsmp.combat.listener.MaceListener;
 import net.thevalorsmp.combat.listener.SpearListener;
@@ -80,7 +78,6 @@ public final class CompositionRoot {
         CombatService combatService = new CombatService(valorScoreService, eventPublisher);
 
         AbilityCooldownManager cooldowns = new AbilityCooldownManager(Clock.systemUTC());
-        SpearItemService spearItems = new SpearItemService(plugin);
         DragonEggController dragonEgg = new DragonEggController(valorScoreService, perkService);
 
         pluginManager.registerEvents(new PlayerProfileListener(profileService), plugin);
@@ -89,7 +86,7 @@ public final class CompositionRoot {
                 new ExtendedPotionListener(valorScoreService, configService.progression()), plugin);
         pluginManager.registerEvents(new CombatListener(combatService), plugin);
         pluginManager.registerEvents(new MaceListener(cooldowns, combatConfig), plugin);
-        pluginManager.registerEvents(new SpearListener(spearItems, cooldowns, combatConfig), plugin);
+        pluginManager.registerEvents(new SpearListener(combatConfig), plugin);
         pluginManager.registerEvents(dragonEgg, plugin);
         plugin.getServer().getScheduler()
                 .runTaskTimer(plugin, dragonEgg, DRAGON_EGG_TICK_PERIOD, DRAGON_EGG_TICK_PERIOD);
@@ -97,7 +94,6 @@ public final class CompositionRoot {
         registerCommand("valor", new ValorCommand(valorScoreService));
         registerCommand("speed", new SpeedCommand(valorScoreService, perkService, speedPreferences));
         registerCommand("valorsmp", new AdminCommand(plugin, configService));
-        registerCommand("valorspear", new SpearCommand(spearItems));
 
         plugin.getSLF4JLogger().debug(
                 "Composition root built with storage backend {}.", configService.database().backend());

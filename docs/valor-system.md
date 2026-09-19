@@ -21,7 +21,7 @@ A player's tier is a pure function of their current-season Valor score against t
 Valor mutation is treated with rigor per `SECURITY.md`:
 
 - All mutations go through `ValorScoreService` — no direct repository writes from elsewhere.
-- Score never goes negative (floored at 0 in the service layer, not just by convention).
+- Score never goes negative (floored at 0 in the service layer, not just by convention) and never exceeds the `max-valor` cap (default 20).
 - Every non-obvious mutation (admin grants) is logged with enough detail to audit after the fact.
 - Any change to the *scoring rule* itself requires a `DECISIONS.md` entry, since it affects the server's core competitive fairness contract with players.
 

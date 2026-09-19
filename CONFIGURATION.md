@@ -75,8 +75,8 @@ When a feature PR adds a new config key to an existing file:
 | File | Hot-reloadable? | Notes |
 |---|---|---|
 | `database.yml` | No | Requires restart to change backend/connection settings |
-| `combat.yml` | Yes | Item-ability cooldowns (mace, spear lunge), death-drop behavior |
-| `progression.yml` | Yes | Valor tier thresholds and per-tier perk settings |
+| `combat.yml` | Yes | Item cooldowns (mace 60s, Lunge-enchanted spear 30s), death-drop behavior |
+| `progression.yml` | Yes | Valor tier thresholds, score cap (`max-valor`, default 20), and per-tier perk settings |
 | `ranks.yml` | Partially | New staff rank definitions reload; currently-online players' displayed rank refreshes on next permission recalculation |
 | `seasons.yml` | No | Season boundaries/timing should not change mid-season without an explicit `DECISIONS.md`-documented operational procedure |
 
