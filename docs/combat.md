@@ -21,11 +21,12 @@ There is **no combat tagging** on the server. Players are never "tagged" for eng
 
 - On a PvP death: `PlayerKilledEvent` fires (`EVENTS.md`), consumed by `ValorScoreService` (score award/deduction) and `LeaderboardService` (stat update).
 - Item/inventory drop behavior on PvP death is **drop everything**.
+- Tier perks are reapplied after respawn (post-respawn event), since death clears potion effects.
 
 ## 5. Item Cooldowns
 
 - **Mace:** 60-second server-enforced attack cooldown (`combat.mace-cooldown-seconds`), also shown via the vanilla hotbar cooldown overlay; maces cannot be enchanted at a table or anvil.
-- **Spears:** vanilla spear items (`Tag.ITEMS_SPEARS`) only — there is no custom spear item or `/valorspear` command. Using a spear enchanted with vanilla **Lunge** applies a 30-second vanilla item cooldown (`combat.spear-lunge-cooldown-seconds`), visible in the hotbar and blocking re-use. Unenchanted spears are unaffected.
+- **Spears:** vanilla spear items (`Tag.ITEMS_SPEARS`) only — there is no custom spear item or `/valorspear` command. A **jab** (left-click stab) with a spear enchanted with vanilla **Lunge** applies a 30-second vanilla item cooldown (`combat.spear-lunge-cooldown-seconds`), visible in the hotbar, on every lunge dash; while on cooldown a lunge attempt costs no hunger and the dash is cancelled server-side. The jab is distinct from the right-click charge attack, which is not cooled down. Unenchanted spears are unaffected.
 
 ## 6. Open Questions
 
