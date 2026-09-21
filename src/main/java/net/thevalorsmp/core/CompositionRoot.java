@@ -86,7 +86,7 @@ public final class CompositionRoot {
                 new ExtendedPotionListener(valorScoreService, configService.progression()), plugin);
         pluginManager.registerEvents(new CombatListener(combatService), plugin);
         pluginManager.registerEvents(new MaceListener(cooldowns, combatConfig), plugin);
-        pluginManager.registerEvents(new SpearListener(combatConfig), plugin);
+        pluginManager.registerEvents(new SpearListener(plugin, combatConfig), plugin);
         pluginManager.registerEvents(dragonEgg, plugin);
         plugin.getServer().getScheduler()
                 .runTaskTimer(plugin, dragonEgg, DRAGON_EGG_TICK_PERIOD, DRAGON_EGG_TICK_PERIOD);
