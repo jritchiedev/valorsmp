@@ -23,7 +23,7 @@ commands:
     permission: valorsmp.speed.use
   valorsmp:
     description: Valor SMP operator diagnostics.
-    usage: /valorsmp <health|version|reload>
+    usage: /valorsmp <health|version|reload|valor>
     permission: valorsmp.admin
 permissions:
   valorsmp.valor.view:

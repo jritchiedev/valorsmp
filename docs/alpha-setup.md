@@ -53,6 +53,8 @@ Perks apply on join, after respawn, and when your tier changes.
 
 ## Operator commands
 - `/valorsmp health|version` — diagnostics (permission `valorsmp.admin`).
+- `/valorsmp valor <give|take|set> <player> <amount>` — adjust a player's Valor (clamped to
+  `[0, max-valor]`); online targets are notified of the change.
 
 ## Known limitations (this alpha)
 - "String Duper Returns" (a Fabric mod) is not included; there is no Paper equivalent.

@@ -64,6 +64,35 @@ public final class ValorScoreService {
     }
 
     /**
+     * Adjusts a player's Valor score by a signed amount (admin use, e.g. {@code /valorsmp valor
+     * give|take}); the result is clamped per the normal mutation rules and fires a rank-change
+     * event if the tier changed.
+     *
+     * @param playerId player UUID
+     * @param delta    signed change in Valor points
+     * @return the resulting clamped score
+     */
+    public int adjustScore(@NotNull UUID playerId, int delta) {
+        return mutate(Objects.requireNonNull(playerId, "playerId"), config.currentSeason(), delta, "admin-adjust");
+    }
+
+    /**
+     * Sets a player's Valor score to an exact value (admin use, e.g. {@code /valorsmp valor set});
+     * the result is clamped per the normal mutation rules and fires a rank-change event if the
+     * tier changed.
+     *
+     * @param playerId player UUID
+     * @param score    desired Valor score
+     * @return the resulting clamped score
+     */
+    public int setScore(@NotNull UUID playerId, int score) {
+        Objects.requireNonNull(playerId, "playerId");
+        int season = config.currentSeason();
+        int delta = score - repository.findScore(playerId, season);
+        return mutate(playerId, season, delta, "admin-set");
+    }
+
+    /**
      * Returns a player's current-season Valor score.
      *
      * @param playerId player UUID
