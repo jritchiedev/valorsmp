@@ -8,7 +8,7 @@ import net.thevalorsmp.progression.repository.ValorScoreRepository;
 import org.jetbrains.annotations.NotNull;
 
 /** In-memory {@link ValorScoreRepository} double for integration tests (REPOSITORIES.md section 2). */
-final class InMemoryValorScoreRepository implements ValorScoreRepository {
+public final class InMemoryValorScoreRepository implements ValorScoreRepository {
 
     private final Map<String, Integer> scores = new HashMap<>();
 

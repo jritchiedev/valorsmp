@@ -102,6 +102,52 @@ class ValorScoreServiceTest {
     }
 
     @Test
+    void adjustScore_clampsAtMaxValor() {
+        UUID player = UUID.randomUUID();
+        repository.saveScore(player, 1, 18);
+
+        assertThat(service.adjustScore(player, 5)).isEqualTo(20);
+    }
+
+    @Test
+    void adjustScore_clampsAtZero() {
+        UUID player = UUID.randomUUID();
+        repository.saveScore(player, 1, 2);
+
+        assertThat(service.adjustScore(player, -5)).isZero();
+    }
+
+    @Test
+    void setScore_setsExactly() {
+        UUID player = UUID.randomUUID();
+
+        assertThat(service.setScore(player, 7)).isEqualTo(7);
+        assertThat(repository.findScore(player, 1)).isEqualTo(7);
+    }
+
+    @Test
+    void setScore_clampsAboveMaxValor() {
+        UUID player = UUID.randomUUID();
+
+        assertThat(service.setScore(player, 99)).isEqualTo(20);
+        assertThat(repository.findScore(player, 1)).isEqualTo(20);
+    }
+
+    @Test
+    void setScore_tierChange_publishesRankChanged() {
+        UUID player = UUID.randomUUID();
+        repository.saveScore(player, 1, 4); // Valor I, threshold for II is 5
+
+        service.setScore(player, 9); // Valor III
+
+        assertThat(events.published()).hasSize(1);
+        ValorRankChangedEvent event = (ValorRankChangedEvent) events.published().get(0);
+        assertThat(event.getPlayerId()).isEqualTo(player);
+        assertThat(event.getOldTier()).isEqualTo(ValorTier.I);
+        assertThat(event.getNewTier()).isEqualTo(ValorTier.III);
+    }
+
+    @Test
     void currentTier_reflectsScore() {
         UUID player = UUID.randomUUID();
         repository.saveScore(player, 1, 13);

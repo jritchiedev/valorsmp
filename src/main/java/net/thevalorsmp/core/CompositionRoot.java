@@ -28,6 +28,7 @@ import net.thevalorsmp.progression.repository.ValorScoreRepository;
 import net.thevalorsmp.progression.service.ValorScoreService;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.plugin.PluginManager;
 
 /**
@@ -93,7 +94,7 @@ public final class CompositionRoot {
 
         registerCommand("valor", new ValorCommand(valorScoreService));
         registerCommand("speed", new SpeedCommand(valorScoreService, perkService, speedPreferences));
-        registerCommand("valorsmp", new AdminCommand(plugin, configService));
+        registerCommand("valorsmp", new AdminCommand(plugin, configService, valorScoreService));
 
         plugin.getSLF4JLogger().debug(
                 "Composition root built with storage backend {}.", configService.database().backend());
@@ -106,5 +107,8 @@ public final class CompositionRoot {
             throw new IllegalStateException("Command '" + name + "' is not declared in plugin.yml");
         }
         command.setExecutor(executor);
+        if (executor instanceof TabCompleter completer) {
+            command.setTabCompleter(completer);
+        }
     }
 }
